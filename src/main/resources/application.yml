@@ -1,0 +1,24 @@
+server:
+  port: 8089
+  servlet:
+    context-path: /
+#  max-http-header-size: 100MB # 导致请求url的时候内存 超高
+spring:
+  mvc:
+    static-path-pattern: /static/**
+#  web:
+#    resources:
+#      # 这里的路径是指编译后的,编译后 resources/public 会在classes/public下
+#      # resources目录为resource资源路径,其下的文件(夹)会跟java编译在同级目录下
+#      # 通过static-path-pattern配置的path即可直接访问这些路径下的资源
+#      # 如: resources/public/test.js -> /static/test.js 即可访问
+#      static-locations: file:~/project/local-utils-bs/static
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+logging:
+  level:
+    root: info
+  file:
+    path: /tmp/local-utils-bs/logs

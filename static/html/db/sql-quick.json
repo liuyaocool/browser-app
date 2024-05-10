@@ -1,0 +1,41 @@
+{
+    "> =": [["= ''"], 3],
+    "> in": [["in ('')"], 5],
+    "> and": [["and "], "NaN"],
+    "> set": [["set "], "NaN"],
+    "> like": [["like '%%'"], 7],
+    "> select": [["select * from \n\nlimit 1000;"], 14],
+    "> from": [["from "], "NaN"],
+    "> left join": [["left join "], "NaN"],
+    "> where": [["where "], "NaN"],
+    "> group": [["group by "], "NaN"],
+    "> order desc": [["order by  desc"], 9],
+    "> order asc": [["order by  asc"], 9],
+    "> count": [["count()"], 6],
+    "> explain": [["explain analyze "], "NaN"],
+    "> delete": [["delete from  where @ = @;"], 12],
+    "> insert": [["insert into  () values (),()"], 12],
+    "> update": [["update  set @ = @ where @ = @, @ = @"], 7],
+    "> update join (pgsql)": [["update  a set @ = b.@ \nfrom @ b\nwhere a.@ = b.@;"], 7],
+    "> drop table (pgsql)": [["drop table if exists ;"], 21],
+    "> add column (pgsql)": [["alter table  add column @name @type;\ncomment on column @table.@column is '';\n"], 12],
+    "> alter column (pgsql)": [["-- SET DEFAULT xx; SET NOT NULL; \nALTER TABLE \nalter column @ set ;"], 46],
+    "> delete column (pgsql)": [["alter table  drop column @column_name;"], 12],
+    "> create table (pgsql)": [
+        [
+            "create table  (",
+            "\n    id bigint primary KEY,",
+            "\n    name varchar(50),",
+            "\n    age integer,",
+            "\n    is_del boolean,",
+            "\n    datea date,",
+            "\n    state smallint not null default 1,",
+            "\n    create_by bigint not null,",
+            "\n    create_time timestamp not null default current_timestamp,",
+            "\n    modified_by bigint,",
+            "\n    modified_time timestamp",
+            "\n);"
+        ], 13
+    ],
+    "> date_part_hour (pgsql)": [["date_part('hour', )"], 18]
+}

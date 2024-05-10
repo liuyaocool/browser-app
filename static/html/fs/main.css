@@ -1,0 +1,73 @@
+/*
+@media
+https://www.runoob.com/tags/att-link-media.html
+竖排的页面会引入这一块样式
+*/
+@media all and (orientation: portrait){
+    .folder, .file, .funcBtn, .upload {font-size: 36px;}
+    table td:nth-of-type(5) {width: 98px;}
+    .upload {margin: 0 0 0 50px !important;}
+    .tbody-div {height: calc(100% - 218px) !important;}
+}
+
+html, body, #app {
+    margin: 0;
+    height: 100%;
+}
+body {
+    background-color: #181a1b;
+    color: white;
+}
+
+.folder, .funcBtn { text-decoration: underline; }
+
+.folder, .funcBtn, .file {
+    cursor: pointer;
+}
+
+.folder:hover, .funcBtn:hover, .file:hover {
+    color: #33ffb4;
+}
+
+.funcBtn, .file { color: #00ff37; }
+
+.folder { color: #e3ff00; }
+
+.upload {
+    margin: 0 0 0 10px;
+    border-width: 0.3vh;
+}
+
+td {
+    white-space: nowrap;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.thead tr:nth-of-type(1){
+    background-color: #808080e0;
+}
+.tbody-div {
+    height: calc(100% - 118px);
+    overflow: auto;
+}
+.tbody-div tr:hover, .thead tr:nth-of-type(2):hover {
+    background-color: #04fb0436;
+}
+table {
+    table-layout: fixed;
+    padding: 0 0 0 10px;
+}
+table td:nth-of-type(1) {text-align: left; padding-left: 5px;}
+table td:nth-last-of-type(5) {width: 118px;}
+table td:nth-last-of-type(4) {width: 118px;}
+table td:nth-last-of-type(3) {width: 80px;}
+table td:nth-last-of-type(2) {width: 208px;}
+table td:nth-last-of-type(1) {width: 118px;}
+
+.preview {
+    max-height: 36px;
+    max-width: 110px;
+}
