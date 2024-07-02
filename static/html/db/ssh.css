@@ -1,0 +1,281 @@
+html {
+    background-color: #181a1b;
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    background-color: transparent;
+}
+
+body * {
+    background-color: transparent;
+    color: white;
+    position: relative;
+    font-family: Söhne Mono,Monaco,Andale Mono,Ubuntu Mono,monospace;
+    /*font-family: "PingFang SC";*/
+}
+
+option {
+    background-color: #363636;
+}
+
+table {
+    border-collapse: collapse
+}
+
+#app {
+    padding-top: 5px;
+    height: calc(100% - 10px);
+}
+
+.dbForm {
+    width: 100%;
+}
+
+.dbForm input, .dbForm select {
+    border: 1px solid #8b8686;
+    outline: none;
+}
+
+/*
+.dbForm input, .dbForm select, .CodeMirror {
+    backdrop-filter: blur(6px);
+}
+*/
+
+.dbForm input, .dbForm button, .dbForm select {
+    padding: 5px 9px;
+    margin: 3px 5px;
+}
+
+.dbForm button {
+    border: none;
+    cursor: pointer;
+}
+
+.btn1 { background-color: #047b04; }
+.btn1:active { background-color: #024602; }
+.btn2 { background-color: #047b65; }
+.btn2:active { background-color: #025042; }
+.btn3 { background-color: #053f87; }
+.btn3:active { background-color: #022550; }
+.btn4 { background-color: #053f87; }
+.btn4:active { background-color: #022550; }
+
+.CodeMirror {
+    font-size: 14px;
+    line-height: 21px;
+}
+.dbForm input:focus, .dbForm select:focus, .CodeMirror-focused {
+    border: 1px solid #00acee;
+}
+
+.sql_div {
+    width: calc(100% - 3px);
+    margin-top: 5px;
+    position: relative;
+}
+
+#data-container{
+    overflow: hidden;
+}
+#data-div {
+    width: 100%;
+    overflow: auto hidden;
+    scroll-behavior: smooth;
+}
+
+#data-div td {
+    padding: 5px;
+    border: 1px solid white;
+    word-break: break-word;
+}
+
+.tbody-div {
+    height: calc(100% - 30px);
+    overflow-y: auto;
+    width: fit-content;
+    scroll-behavior: smooth;
+    /** firefox 滚动条显示在div外部 */
+    padding-right: 18px;
+}
+
+.tbody-div tr:hover {
+    background-color: #045c5c8f;
+}
+
+.thead td {
+    background-color: #545252a1;
+}
+
+.his-div {
+    transition: 0.3s cubic-bezier(1, -0.01, 0, 1.05) 0s all;
+    position: fixed;
+    max-height: 500px;
+    left: 0;
+    right: 0;
+    margin: auto;
+    top: 100px;
+}
+
+.terminal {
+    font-weight: bold;
+}
+
+.his-div input {
+    width: calc(100% - 20px);
+    padding: 5px 0px;
+    margin: 5px 10px;
+    border: 0;
+    outline: none;
+}
+
+.high-light {
+    color: #10f900;
+}
+
+.hot-key-div {
+    max-height: 300px;
+    min-width: 150px;
+    max-width: 366px;
+    position: absolute;
+    transition: 1s cubic-bezier(0.075, 0.82, 0.165, 1) 0s all;
+}
+.hot-key-div > .box-item:first-of-type {
+    position: relative;
+    padding-right: 5px;
+}
+.hot-key-div > .box-item:first-of-type::after {
+    content: 'Tab';
+    color: #acaaaa;
+    background-color: #8080804f;
+    border-radius: 5px;
+    font-size: 12px;
+    padding: 2px 5px;
+    margin-left: 5px;
+}
+inline {
+    margin: 2px 5px;
+    display: inline-block;
+    border-bottom: 1px solid #dfe614;
+}
+label {
+    cursor: pointer;
+    padding: 0px 5px;
+}
+
+.tips {
+    font-size: 12px;
+    line-height: 36px;
+}
+.tips, .tips span {
+    color: #00ffa1;
+}
+
+.show-sql {
+    color: #4aff00d6;
+    font-size: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.footer {
+    width: 100%;
+    table-layout: fixed;
+}
+.footer * {
+    text-align: center;
+}
+.footer td:nth-of-type(1) {
+    width: 156px;
+}
+.footer td:nth-of-type(3) {
+    width: 366px;
+    padding-left: 10px;
+}
+.footer td:nth-of-type(3) input[type=number] {
+    width: 60px;
+}
+
+input[readonly] {
+    background-color: #343434ba;
+}
+
+.w-host { width: 118px; }
+.w-port { width: 68px; }
+.w-user { width: 98px; }
+.w-pwd { width: 118px; }
+
+tip {
+    background-color: yellow;
+    color: black;
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 16px;
+    line-height: 16px;
+    font-size: 16px;
+    text-align: center;
+}
+
+tip-sql {
+    position: absolute;
+    font-size: 12px;
+    right: 58px;
+    top: 5px;
+}
+tip-sql * { color: yellow; }
+tip-sql td { padding: 0 5px; }
+
+.box {
+    background-color: #44434326;
+    box-shadow: #0000009e 0px 0px 8px 0px;
+    backdrop-filter: blur(6px);
+    padding: 5px 0px;
+    z-index: 99;
+    font-size: 14px;
+    overflow: hidden auto;
+    width: fit-content;
+    height: fit-content;
+}
+
+.box-item {
+    padding: 2px 10px;
+    margin: 3px 5px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.context-menu {
+    position: absolute;
+}
+.context-menu div {
+    cursor: pointer;
+}
+.context-menu div:hover, .selected {
+    background-color: #ffffff36;
+}
+
+tip-data {
+    position: absolute;
+    font-size: 12px;
+    left: calc(50% - 12px);
+    top: calc(50% - 12px);
+    line-height: 10px;
+    border-radius: 50%;
+    padding: 8px !important;
+    text-align: center;
+    color: yellow;
+}
+
+.cursor-statistics {
+    position: absolute;
+    right: 5px;
+    bottom: 2px;
+    font-size: 12px;
+}
