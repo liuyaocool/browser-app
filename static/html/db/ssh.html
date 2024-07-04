@@ -44,7 +44,9 @@
         <button type="button" class="btn2" onclick="execute('table')">表</button>
         <button type="button" class="btn2" onclick="execute('view')">视图</button>
         <inline>
-            <input id="tableName" type="text" v-model="funcAttr.tableName" placeholder="输入表名" style="width: 260px; text-align: right">
+            <input id="tableName" type="text" v-model="funcAttr.tableName" placeholder="输入表名" 
+                oninput="showTableList(this)" onblur="vm.panelReset()"
+                style="width: 260px; text-align: right">
             <tip v-show="funcAttr.funcKeyPress" style="right:136px;">t</tip>
             <button type="button" class="btn2" onclick="execute('column')">表结构</button>
             <button type="button" class="btn2" onclick="execute('index')">表索引</button>
@@ -101,7 +103,7 @@
         </td>
     </tr></table>
 
-    <div class="box hot-key-div" :style="panel.position" v-show="panel.show=='hot-key-div'">
+    <div class="box hot-key-div" :style="panel.style" v-show="panel.show=='hot-key-div'">
         <div v-for="(row, i) in panel.data" v-html="row[1]" class="box-item"
              :class="(panel.selIdx==i?' selected ':' ') + row[0]"
              @click="panelDataClick(i)" @mouseover="panel.selIdx=i"
@@ -115,12 +117,20 @@
         ></div>
     </div>
 
-    <div class="box context-menu" v-show="panel.menuDataIdx >= 0" :style="panel.menuStyle">
+    <div class="box context-menu" v-show="panel.menuDataIdx >= 0" :style="panel.style">
         <div class="box-item" @click="copyToInsertPage()">复制为insert(整页)</div>
         <div class="box-item" @click="copyToInsert()">复制为insert</div>
         <div class="box-item" @click="copyToUpdate()">复制为update</div>
         <div class="box-item" @click="tableStruct()">表结构</div>
         <div class="box-item" @click="tableIndex()">表索引</div>
+    </div>
+
+    <div class="box" :style="panel.style" v-show="panel.show=='table-list'"
+        style="position: absolute; text-align: right;">
+        <div v-for="(row, i) in panel.data" v-html="row[1]" class="box-item"
+            :class="panel.selIdx==i?' selected ':' '"
+            @click="panelDataClick(i)" @mouseover="panel.selIdx=i"
+        ></div>
     </div>
 </div>
 

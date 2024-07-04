@@ -97,10 +97,10 @@ function sqlSetScroll(y) {
 }
 
 function isShowHotChar(c) {
-    return  ['>', '='].indexOf(c) >= 0 || isEnglishNum(c);
+    return  ['>', '='].indexOf(c) >= 0 || isTableChar(c);
 }
 
-function isEnglishNum(c) {
+function isTableChar(c) {
     if (!c) return false;
     let c0 = c.charCodeAt(0);
     return '_' == c
@@ -109,8 +109,6 @@ function isEnglishNum(c) {
         || (c0 >= 48 && c <= 57) // 0~9
         ;
 }
-
-
 
 
 /*

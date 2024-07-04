@@ -19,7 +19,7 @@
     "> update join (pgsql)": [["update  a set @ = b.@ \nfrom @ b\nwhere a.@ = b.@;"], 7],
     "> drop table (pgsql)": [["drop table if exists ;"], 21],
     "> add column (pgsql)": [["alter table  add column @name @type;\ncomment on column @table.@column is '';\n"], 12],
-    "> alter column (pgsql)": [["-- SET DEFAULT xx; SET NOT NULL; \nALTER TABLE \nalter column @ set ;"], 46],
+    "> alter column (pgsql)": [["-- SET DEFAULT xx; SET NOT NULL; TYPE VARCHAR(200)； \nALTER TABLE \nalter column @ set ;"], 65],
     "> delete column (pgsql)": [["alter table  drop column @column_name;"], 12],
     "> create table (pgsql)": [
         [

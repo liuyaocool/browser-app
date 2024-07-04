@@ -94,21 +94,11 @@ const vm = Vue.createApp({
             },
             panel: {
                 menuDataIdx: -1,
-                menuStyle: {
-                    left: '',
-                    top: '',
-                    right: '',
-                    bottom: ''
-                },
+                style: {},
                 show: '',
                 data: [],
                 selIdx: 0,
-                clickFunc: null,
-                position: {
-                    left: '',
-                    top: '',
-                    right: '',
-                }
+                clickFunc: null
             },
             funcAttr: {
                 title: '',
@@ -224,10 +214,7 @@ const vm = Vue.createApp({
             this.panel.show = '';
             this.panel.selIdx = 0;
             this.panel.clickFunc = null;
-            this.panel.position.left = '';
-            this.panel.position.top = '';
-            this.panel.position.right = '';
-            this.panel.position.top = '';
+            this.panel.style = {};
         },
         panelChooseFirst(ev) {
             if (this.panel.clickFunc) {
@@ -247,8 +234,8 @@ const vm = Vue.createApp({
         },
         showMenu(e, idx) {
             this.panel.menuDataIdx = idx;
-            this.panel.menuStyle.left = e.clientX + 'px';
-            this.panel.menuStyle.top = e.clientY + 'px';
+            this.panel.style.left = e.clientX + 'px';
+            this.panel.style.top = e.clientY + 'px';
             e.preventDefault();
             return false;
         },
@@ -707,13 +694,13 @@ function showHotKey(input, left, top) {
         vm.panel.clickFunc = chooseHotkey;
         vm.panel.selIdx = -1;
         // 位置
-        vm.panel.position.top = top + 'px';
+        vm.panel.style.top = top + 'px';
         if ((document.querySelector('.hot-key-div').clientWidth + 10 + left) > document.body.offsetWidth) {
-            vm.panel.position.left = '';
-            vm.panel.position.right = '10px';
+            vm.panel.style.left = '';
+            vm.panel.style.right = '10px';
         } else {
-            vm.panel.position.left = left + 'px';
-            vm.panel.position.right = '';
+            vm.panel.style.left = left + 'px';
+            vm.panel.style.right = '';
         }
     }
 }
@@ -776,6 +763,80 @@ function chooseHotkey(data) {
     escPress();
 }
 
+
+function saveHotTable(sql) {
+    if (!sql) return;
+    if(sql.trim().startsWith('select')) {
+        saveTableFromSelect(sql);
+    }
+}
+
+function saveTableFromSelect(sql) {
+    let sp, split = sql.replaceAll('\n', ' ').replaceAll('\t', ' ').split(' from '),
+        tableList = (localStorage.getItem('db_table_list') || '').split(','),
+        addTable = function(tb) {
+            if (!tb) return;
+            for (let i = 0; i < tb.length; i++) {
+                if (!isTableChar(tb[i])) {
+                    console.error(tb);
+                    return;
+                }
+            }
+            if (tableList.indexOf(tb) < 0) {
+                tableList.push(tb);
+                console.log(tb);
+            }
+        },
+        tbSqlOk = function(str) {
+            return str && '(' != str.trim().charAt(0);
+        }
+
+    for (let i = 1; i < split.length; i++) {
+        if (!tbSqlOk(split[i])) continue;
+        sp = split[i].split(' join ');
+        if (1 == sp.length) {
+            // from 后边没有join, 则只有两种
+            //  1:一张表( t_a a )
+            //  2:多张表( t_a a, t_b b, t_c c )
+            sp = sp[0].split(',');
+            for (let i2 = 0; i2 < sp.length; i2++) {
+                addTable(sp[i2].split(' ')[0]);
+            }
+            continue;
+        }
+        for (let i2 = 0; i2 < sp.length; i2++) {
+            if (!tbSqlOk(sp[i2])) continue;
+            addTable(sp[i2].trim().split(' ')[0]);
+        }
+    }
+    localStorage.setItem('db_table_list', tableList.join(','));
+}
+
+function showTableList(dom) {
+    let rect = dom.getBoundingClientRect();
+    vm.panel.show = 'table-list';
+    vm.panel.clickFunc = chooseTable;
+    vm.panel.style = {
+        top: `${rect.top + rect.height}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`
+    };
+    let tableList = (localStorage.getItem('db_table_list') || '').split(',');
+    let data = [];
+    for (let i = 0; i < tableList.length; i++) {
+        if(tableList[i] && matchKey(tableList[i], dom.value)) {
+            data.push([tableList[i], highLightChar(tableList[i], dom.value)]);
+        }
+    }
+    vm.panel.data = data;
+}
+
+function chooseTable(data) {
+    vm.funcAttr.tableName = data[0];
+    vm.panelReset();
+    document.getElementById('tableName').focus();
+}
+
 /**
  * 匹配字符串 非连续存在也返回true
  *  例 matchKey('Hello World', 'eord') = true
@@ -796,9 +857,6 @@ function matchKey(str, key) {
     return matchedCount == key.length;
 }
 
-function saveHotTable(sql) {
-    
-}
 function saveHotKey(sql) {
     if (!sql) { return; }
     let hotKeys = getStorageJson('db_hot_key', []);
@@ -806,7 +864,7 @@ function saveHotKey(sql) {
     let hotCount = getStorageJson('db_hot_key_count', {});
     let k = '', ki, kc, kcObjPrev;
     for (let i = 0; i < sql.length; i++) {
-        if (isEnglishNum(sql[i])) {
+        if (isTableChar(sql[i])) {
             k += sql[i];
             continue;
         }
@@ -815,7 +873,7 @@ function saveHotKey(sql) {
             continue;
         }
         if (!hotCount[k]) { // 新词
-            hotCount[k] = [1, hotKeys.length,];
+            hotCount[k] = [1, hotKeys.length]; // [出现次数, 顺序下标]
             hotKeys.push(k);
         } else { // 旧词
             kc = ++hotCount[k][0]; // 当前词出现次数
@@ -839,13 +897,13 @@ function saveHotKey(sql) {
 }
 
 function exportTable() {
-    if (!vm.tb.data || 0 == vm.tb.data.length) {
+    if (!vm.tb.dataAll || 0 == vm.tb.dataAll.length) {
         showTbMsg('数据为空.');
         return;
     }
     let data = [vm.tb.head];
-    for (let i = 0; i < vm.tb.data.length; i++) {
-        data.push(vm.tb.data[i]);
+    for (let i = 0; i < vm.tb.dataAll.length; i++) {
+        data.push(vm.tb.dataAll[i]);
     }
     try {
         downloadXlsxFromArray(data, 'export.xlsx');
