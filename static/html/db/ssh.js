@@ -314,7 +314,7 @@ document.onmousedown = function (ev) {
     escPress();
 }
 
-document.onkeydown = function (ev) {
+document.addEventListener('keydown', function(ev) {
     vm.funcAttr.funcKeyPress = ev.key == vm.funcAttr.funcKey;
     if (ev[vm.funcAttr.funcKeyCode]) {
         switch (ev.code) {
@@ -337,7 +337,7 @@ document.onkeydown = function (ev) {
             case 'ArrowDown': vm.panelNext(ev); break;
         }
     }
-}
+})
 
 document.onkeyup = function (ev) {
     vm.funcAttr.funcKeyPress = false;
