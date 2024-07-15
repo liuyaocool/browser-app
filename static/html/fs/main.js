@@ -160,18 +160,13 @@ const vm = createApp({
             return `${this.getPagePath()}/${row[1]}`;
         },
         getFilePreview(row) {
-            switch (row[4]) {
-                case 'svg':
-                case 'png':
-                case 'jpeg':
-                case 'jpg':
-                case 'gif':
+            switch(fsMimeType(row[4])) {
+                case FS_TYPE.IMAGE:
                     return `<img class="preview" src="${path}/fs/mediaPlay?path=${encodeURIComponent(row[5])}">`;
-                case 'mp4':
+                case FS_TYPE.VIDEO:
                     return `<video class="preview" src="${path}/fs/mediaPlay?path=${encodeURIComponent(row[5])}"></video>`;
                 default: return "-";
             }
-
         },
         getFileSuffix(row) {
             // 从后往前数第几个
@@ -201,6 +196,7 @@ window.onresize = function (e) {
 
 function fsMimeType(suffix) {
     switch (suffix || '') {
+        case 'webp':
         case 'png':
         case 'jpeg':
         case 'jpg':
