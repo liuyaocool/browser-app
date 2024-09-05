@@ -19,6 +19,16 @@ body * {
     /*font-family: "PingFang SC";*/
 }
 
+@font-face {
+    font-family: "myfont";
+    src: url('../../font/汉仪乐喵体W.ttf') format('truetype');
+}
+
+.dbForm, .dbForm *, .footer, .footer * {
+    font-family: "myfont", sans-serif;
+    font-weight: bold;
+}
+
 option {
     background-color: #363636;
 }

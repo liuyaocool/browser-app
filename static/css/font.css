@@ -1,0 +1,27 @@
+.body-font, .body-font *{
+    font-family: "SymbolFont", "ChineseFont", "EnglishFont", sans-serif;
+    font-weight: bold;
+}
+
+/* 针对中文字符 */
+@font-face {
+    font-family: "ChineseFont";
+    src: url('../font/汉仪乐喵体W.ttf') format('truetype');
+    /* src: url('../font/华康翩翩体W5.ttf') format('truetype'); */
+    unicode-range: U+4E00-9FFF, U+3400-4DBF; /* 中文字符的Unicode范围 */
+}
+
+/* 针对英文字符 */
+@font-face {
+    font-family: "EnglishFont";
+    /* src: url(../../font/RainbowParty.ttf) format('truetype'); */
+    src: url('../font/汉仪乐喵体W.ttf') format('truetype');
+    unicode-range: U+0000-007F; /* 英文字母和常用符号的Unicode范围 */
+}
+
+/* 针对符号 */
+@font-face {
+    font-family: "SymbolFont";
+    src: url('../font/汉仪乐喵体W.ttf') format('truetype');
+    unicode-range: U+2000-206F, U+20A0-20CF; /* 常见符号的Unicode范围 */
+}

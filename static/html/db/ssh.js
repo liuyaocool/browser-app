@@ -721,6 +721,8 @@ function hotKeyAddToData(type, input, iteFunc) {
             vm.panel.data.push(arrFull[i][j]);
         }
     }
+    
+    arr.sort((a, b) => a[2].length - b[2].length);
     for (let i = 0; i < arr.length; i++) {
         vm.panel.data.push(arr[i]);
     }
@@ -970,7 +972,7 @@ function cacheExport() {
     const a = {};
     for (const key in localStorage) {
         if (localStorage.hasOwnProperty(key)) {
-            a[key] = JSON.parse(localStorage[key]);
+            a[key] = localStorage[key];
         }
     }
     let b = JSON.stringify(a);
@@ -982,7 +984,7 @@ function cacheImport() {
         try {
             let a = JSON.parse(content);
             for (const key in a) {
-                localStorage[key] = JSON.stringify(a[key]);
+                localStorage[key] = a[key];
             }
             alert("导入完成");
         } catch (e) {
