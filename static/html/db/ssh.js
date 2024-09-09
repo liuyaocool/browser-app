@@ -722,7 +722,7 @@ function hotKeyAddToData(type, input, iteFunc) {
         }
     }
     
-    arr.sort((a, b) => a[2].length - b[2].length);
+    // arr.sort((a, b) => a[2].length - b[2].length);
     for (let i = 0; i < arr.length; i++) {
         vm.panel.data.push(arr[i]);
     }
@@ -862,9 +862,9 @@ function matchKey(str, key) {
 function saveHotKey(sql) {
     if (!sql) { return; }
     let hotKeys = getStorageJson('db_hot_key', []);
-    // {key: [统计， 下标]}
+    // {key: [统计， 下标, 最后使用时间]}
     let hotCount = getStorageJson('db_hot_key_count', {});
-    let k = '', ki, kc, kcObjPrev;
+    let k = '', ki, kc, kcObjPrev, now = new Date().getTime();
     for (let i = 0; i < sql.length; i++) {
         if (isTableChar(sql[i])) {
             k += sql[i];
@@ -875,11 +875,12 @@ function saveHotKey(sql) {
             continue;
         }
         if (!hotCount[k]) { // 新词
-            hotCount[k] = [1, hotKeys.length]; // [出现次数, 顺序下标]
+            hotCount[k] = [1, hotKeys.length, now]; // [出现次数, 顺序下标]
             hotKeys.push(k);
         } else { // 旧词
             kc = ++hotCount[k][0]; // 当前词出现次数
             ki = hotCount[k][1]; // 当前词位置
+            hotCount[k][2] = now; // 最后使用时间
             // 当前词统计 比 上一词多
             while((--ki) >= 0 && (kcObjPrev = hotCount[hotKeys[ki] ])[0] < kc) {
                 // 交换数组
@@ -993,12 +994,35 @@ function cacheImport() {
     });
 }
 
-function test() {
-    let kkk = [];
-    // [统计， 下标]
-    let hotCount = JSON.parse(localStorage.db_hot_key_count);
-    for( let k in hotCount) kkk[hotCount[k][1]] = k;
+function cacheClear(auto) {
+    // {key: [统计， 下标, 最后使用时间]}
+    let hot = JSON.parse(localStorage["db_hot_key_count"]);
+    let hotLen = Object.keys(hot).length;
+    let hotNewList = [];
+    let now = new Date().getTime();
+    // if (auto === true) {
+    //     for(let k in hot) {
+    //         // 30天未使用 清理掉
+    //         if (hot[k][2] - now > 1000*60*60*24*30) {
+    //             hotNewList.push([k, hot[k][0]]);
+    //         }
+    //     }
+    // } else {
+        for(let k in hot) {
+            if (hot[k][0] > 4) {
+                hotNewList.push([k, hot[k][0]]);
+            }
+        }
+    // }
+    hotNewList.sort((a, b) => b[1] - a[1]);
 
-
-    localStorage.setItem('db_hot_key', JSON.stringify(kkk));
+    let hotCount = {};
+    let hotKey = [];
+    for (let i = 0; i < hotNewList.length; i++) {
+        hotKey.push(hotNewList[i][0]);
+        hotCount[hotNewList[i][0]] = [hotNewList[i][1], i, now];
+    }
+    console.log(`old:${hotLen} / new:${Object.keys(hotCount).length}`);
+    localStorage.setItem('db_hot_key', JSON.stringify(hotKey));
+    localStorage.setItem('db_hot_key_count', JSON.stringify(hotCount));
 }
