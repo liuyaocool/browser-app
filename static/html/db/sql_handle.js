@@ -41,7 +41,7 @@ function getCurPos() {
     // 总计字数
     let val = editor.getValue();
     let valPrev = val.substring(0, position);
-    let sq1 = valPrev.substr(Math.max(0, valPrev.lastIndexOf(';') + 1)).trim();
+    let sq1 = valPrev.substr(Math.max(0, valPrev.lastIndexOf(';') + 1)).trimLeft();
     // [[totalIdx, total], [curSqlIdx, 0]]
     return [[position, val.length], [sq1.length, 0]];
 }

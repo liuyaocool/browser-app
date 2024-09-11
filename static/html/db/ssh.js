@@ -391,7 +391,7 @@ function execute(mode) {
         showTbMsg('请先选中sql.');
         return;
     }
-    vm.formdata.sql = sql;
+    vm.formdata.sql = sql.trim();
     if (!vm.formdata.driver || !vm.formdata.host || !vm.formdata.port
         || !vm.formdata.db || !vm.formdata.dbuser || !vm.formdata.dbpwd) {
         showTbMsg('连接信息不完整.');
