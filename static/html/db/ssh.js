@@ -111,6 +111,7 @@ const vm = Vue.createApp({
                 funcKeyCode: 'altKey',
                 isPc: true,
                 curPos: [0,0], // [光标所在下标, 总字数]
+                sqlPos: [0,0], // [光标所在下标, 总字数]
             },
             tb: {
                 pageNo: 1,
@@ -522,10 +523,8 @@ bindKeydown(e => {
             case 'KeyD': sqlDuplicate(); break;
             case 'Slash': sqlNote(); break;
             case 'Enter': sqlNextLine(); break;
-            case 'KeyW':
-            case 'Backquote': ; sqlSelect(true); break;
-            case 'KeyE': // windows alt+tab按键冲突
-            case 'Tab': ; sqlSelect(); break;
+            case 'KeyW': sqlSelect(true); break;
+            case 'KeyE': sqlSelect(); break;
             default: return;
         }
         e.preventDefault();
@@ -563,8 +562,14 @@ bindInput(e => {
     showHotKey(sqlInfo.hotKey, sqlInfo.cursotPos.left, sqlInfo.cursotPos.top + 18);
 });
 
-bindCursorActive((pos) => vm.funcAttr.curPos = pos);
-vm.funcAttr.curPos = getCurPos();
+bindCursorActive(posUpdate);
+
+function posUpdate() {
+    let pos = getCurPos();
+    vm.funcAttr.curPos = pos[0];
+    vm.funcAttr.sqlPos = pos[1];
+}
+posUpdate();
 
 function sqlDuplicate() {
     let sqlInfo = getSql(),

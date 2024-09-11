@@ -8,7 +8,10 @@ function sqlInit() {
         lineNumbers: true,
         lineWrapping: true, // 启用自动换行
         matchBrackets: true,
-        autofocus: true
+        autofocus: true,
+        extraKeys: {  // 禁用快捷键
+            'Ctrl-D': false,
+        }
     });
     sqlSet(sessionStorage.sql || '');
     window.onbeforeunload = ev => {
@@ -29,17 +32,18 @@ function bindKeydown(cb) {
 }
 
 function bindCursorActive(cb) {
-    editor.on("cursorActivity", function() {
-        cb(getCurPos());
-    });
+    editor.on("cursorActivity", cb);
 }
 
 function getCurPos() {
     // 获得光标所在字数
-    var position = editor.indexFromPos(editor.getCursor());
+    let position = editor.indexFromPos(editor.getCursor());
     // 总计字数
-    var total = editor.getValue().length;
-    return [position, total];
+    let val = editor.getValue();
+    let valPrev = val.substring(0, position);
+    let sq1 = valPrev.substr(Math.max(0, valPrev.lastIndexOf(';') + 1)).trim();
+    // [[totalIdx, total], [curSqlIdx, 0]]
+    return [[position, val.length], [sq1.length, 0]];
 }
 
 /**

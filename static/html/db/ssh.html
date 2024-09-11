@@ -70,11 +70,11 @@
                 <tr><td>注释: </td>     <td>{{funcAttr.funcKey}} + /</td></tr>
                 <tr><td>复制: </td>     <td>{{funcAttr.funcKey}} + d</td></tr>
                 <tr><td>下一行输入: </td><td>{{funcAttr.funcKey}} + Enter</td></tr>
-                <tr><td>上一个sql: </td><td>{{funcAttr.funcKey}} + `(W)</td></tr>
-                <tr><td>下一个sql: </td><td>{{funcAttr.funcKey}} + Tab(E)</td></tr>
+                <tr><td>上一个sql: </td><td>{{funcAttr.funcKey}} + W</td></tr>
+                <tr><td>下一个sql: </td><td>{{funcAttr.funcKey}} + E</td></tr>
             </table>
         </tip-sql>
-        <div class="cursor-statistics">{{funcAttr.curPos[0]}}/{{funcAttr.curPos[1]}}</div>
+        <div class="cursor-statistics">({{funcAttr.sqlPos[0]}}) {{funcAttr.curPos[0]}}/{{funcAttr.curPos[1]}}</div>
     </div>
     <div id="height_sql">==</div>
     <div id="data-container" :style="tb.style">
