@@ -24,7 +24,11 @@ body * {
     src: url('../../font/汉仪乐喵体W.ttf') format('truetype');
 }
 
-.dbForm, .dbForm *, .footer, .footer * {
+.myfont
+, .dbForm, .dbForm *
+, .footer, .footer * 
+/* , .sql_div * */
+{
     font-family: "myfont", sans-serif;
     font-weight: bold;
 }
@@ -236,7 +240,7 @@ tip {
 tip-sql {
     position: absolute;
     font-size: 12px;
-    right: 58px;
+    right: 5px;
     top: 5px;
 }
 tip-sql * { color: yellow; }
@@ -288,4 +292,6 @@ tip-data {
     right: 5px;
     bottom: 2px;
     font-size: 12px;
+    color: gray;
+    user-select: none;
 }
