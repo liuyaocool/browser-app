@@ -21,6 +21,7 @@
     "> add column (pgsql)": [["alter table  add column @name @type;\ncomment on column @table.@column is '';\n"], 12],
     "> alter column (pgsql)": [["-- SET DEFAULT xx; SET NOT NULL; TYPE VARCHAR(200);\nALTER TABLE \nalter column @ set ;"], 64],
     "> delete column (pgsql)": [["alter table  drop column @column_name;"], 12],
+    "> pkey column (pgsql)": [["alter table \nadd constraint @pkey primary key (@columns);"], 12],
     "> create table (pgsql)": [
         [
             "create table  (",
