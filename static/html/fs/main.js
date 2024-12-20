@@ -200,6 +200,7 @@ function fsMimeType(suffix) {
         case 'png':
         case 'jpeg':
         case 'jpg':
+        case 'svg':
         case 'gif': return FS_TYPE.IMAGE;
         case 'mp4': return FS_TYPE.VIDEO;
         case 'txt':

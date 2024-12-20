@@ -20,5 +20,6 @@ target/
 logs/
 .idea/
 test/
+.vscode/
 
 *.iml
