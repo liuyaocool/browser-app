@@ -1,5 +1,5 @@
 const Global = {
-    apiPath: "",
+    apiPath: "/browser-app",
 }
 
 const FS_TYPE = {
