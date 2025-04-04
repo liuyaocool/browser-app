@@ -89,7 +89,8 @@ const vm = createApp({
             alert("暂不支持当前格式.");
         },
         downloadFile(fileName) {
-            location.href = `${path}/fs/download?path=${this.getPagePath()}/${fileName}`;
+            location.href = `${path}/fs/download?path=`
+                + urlBase64Encode(encodeURIComponent(this.getPagePath() + fileName));
         },
         uploadFile() {
             if (vm.pagePath.length < 1) {

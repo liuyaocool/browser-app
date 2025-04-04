@@ -20,7 +20,7 @@ public class BsUtilsWebApplication {
 	@GetMapping("/")
 	public String main(HttpServletRequest request, HttpServletResponse response){
 		try {
-			response.sendRedirect(request.getContextPath() + "/static/html/menu.html");
+			response.sendRedirect(request.getContextPath() + "/static/index.html");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

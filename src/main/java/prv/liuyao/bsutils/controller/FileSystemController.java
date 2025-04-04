@@ -2,6 +2,7 @@ package prv.liuyao.bsutils.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import liuyao.utils.IOUtils;
+import liuyao.utils.URLUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -55,7 +56,7 @@ public class FileSystemController {
         if (!StringUtils.hasText(path)) {
             return;
         }
-        File file = new File(path);
+        File file = new File(URLDecoder.decode(URLUtils.decode(path)));
         if (0 == file.length()) {
             return;
         }
