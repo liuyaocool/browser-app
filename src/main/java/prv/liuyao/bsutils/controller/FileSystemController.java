@@ -2,7 +2,7 @@ package prv.liuyao.bsutils.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import liuyao.utils.IOUtils;
-import liuyao.utils.URLUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +12,7 @@ import prv.liuyao.bsutils.global.GlobalConstant;
 import prv.liuyao.bsutils.utils.Cache;
 import prv.liuyao.bsutils.utils.DateUtil;
 
+import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/fs")
 public class FileSystemController {
@@ -56,7 +57,7 @@ public class FileSystemController {
         if (!StringUtils.hasText(path)) {
             return;
         }
-        File file = new File(URLDecoder.decode(URLUtils.decode(path)));
+        File file = new File(URLDecoder.decode(path));
         if (0 == file.length()) {
             return;
         }
@@ -76,7 +77,7 @@ public class FileSystemController {
             IOUtils.transferTo(fc, sos);
             sos.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("fs download error", e);
         } finally {
             IOUtils.close(fc, fis, sos);
         }
@@ -94,8 +95,10 @@ public class FileSystemController {
                 }
                 request.setAttribute(NonStaticResourceHttpRequestHandler.ATTR_FILE, filePath);
                 nonStaticResourceHttpRequestHandler.handleRequest(request, response);
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (IOException e) {
+                log.error("fs mediaPlay error 1: {}", e.getMessage());
+            } catch (ServletException e) {
+                log.error("fs mediaPlay error 2", e);
             }
         } else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);

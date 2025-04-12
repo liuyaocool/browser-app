@@ -6,4 +6,5 @@ const FS_TYPE = {
     IMAGE: 'image',
     VIDEO: 'video',
     TEXT: 'text',
+    PDF: 'PDF',
 }

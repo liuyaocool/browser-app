@@ -24,7 +24,7 @@
         <tr><td>名称</td><td>预览</td><td>大小</td><td>类型</td><td>修改时间</td><td>操作</td></tr>
         <tr><td class="folder" @click="folderLeave()">..</td><td>-</td><td>-</td><td>-</td><td>- -</td></tr>
     </table>
-    <div class="tbody-div">
+    <div id="tbody-div" class="tbody-div">
         <table :style="{width: tableWidth}">
             <tr v-for="(row, i) in files">
                 <td :title="row[1]" :class="row[0]=='d' ? 'folder' : 'file'" @click="openPath(row)">{{row[1]}}</td>

@@ -56,14 +56,19 @@ const vm = createApp({
                 }
             });
         },
+        toTop() {
+            document.getElementById('tbody-div').scrollTop = 0;
+        },
         folderEnter(folderName) {
             // 第一层路径
             this.pagePath.push(folderName.endsWith('/') ? folderName : (folderName + '/'));
             this.getFiles();
+            this.toTop();
         },
         folderLeave() {
             this.pagePath.pop();
             this.getFiles();
+            this.toTop();
         },
         gotoPagePath(idx) {
             idx = Math.max(0, idx);
@@ -71,6 +76,7 @@ const vm = createApp({
                 this.pagePath.pop();
             }
             this.getFiles();
+            this.toTop();
         },
         getPagePath() {
             return this.pagePath.join('').replace("//", "/");
@@ -89,8 +95,7 @@ const vm = createApp({
             alert("暂不支持当前格式.");
         },
         downloadFile(fileName) {
-            location.href = `${path}/fs/download?path=`
-                + urlBase64Encode(encodeURIComponent(this.getPagePath() + fileName));
+            location.href = `${path}/fs/download?path=` + encodeURIComponent(this.getPagePath() + fileName);
         },
         uploadFile() {
             if (vm.pagePath.length < 1) {
