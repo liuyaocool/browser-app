@@ -36,7 +36,7 @@
         </div>
         <button type="button" :style="{'background-color':funcAttr.connOpen? 'chocolate' : 'gray' }" 
             style="user-select: all;"
-            @click="toggleConn()">{{formdata.host}}/{{formdata.db}}</button>
+            @click="toggleConn()">{{formdata.dbuser}}@{{formdata.host}}/{{formdata.db}}</button>
         <button type="button" class="btn1" onclick="execute('selected')">执行选中<tip v-show="funcAttr.funcKeyPress">r</tip></button>
         <button type="button" class="btn1" onclick="stopExecute()">停止</button>
         <button v-show="!funcAttr.isPc" type="button" class="btn1" onclick="showHistory()">DB历史({{funcAttr.funcKey}}+q)</button>

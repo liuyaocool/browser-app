@@ -57,8 +57,6 @@ public class DBConnectionController {
                 dbParam.host = "127.0.0.1"; dbParam.port = bindPort;
             }
             String pgUrl = dbParam.driver.getJdbcUrl(dbParam.host, dbParam.port, dbParam.db);
-            // 校验是否有此类
-            Class<?> aClass = Class.forName("org.postgresql.Driver");
             System.out.println(pgUrl);
 
             // ---------- 执行 ----------
