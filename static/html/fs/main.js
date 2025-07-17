@@ -4,7 +4,6 @@ const {createApp} = Vue;
 const vm = createApp({
     data() {
         return {
-            tableWidth: '100%',
             uploadProgress: '',
             pagePath: [], // every ends with '/'
             files: [
@@ -18,7 +17,6 @@ const vm = createApp({
             this.pagePath = location.hash.slice(1).match(/[^\/]+\/?|\//g);
         }
         this.getFiles();
-        this.resizeTable();
     },
     methods: {
         getFiles() {
@@ -57,7 +55,7 @@ const vm = createApp({
             });
         },
         toTop() {
-            document.getElementById('tbody-div').scrollTop = 0;
+            // document.getElementById('tbody-div').scrollTop = 0;
         },
         folderEnter(folderName) {
             // 第一层路径
@@ -190,15 +188,8 @@ const vm = createApp({
             }
             return split[split.length-1];
         },
-        resizeTable() {
-            this.tableWidth = document.getElementById('app').clientWidth - 18 + 'px'
-        }
     },
 }).mount("#app");
-
-window.onresize = function (e) {
-    vm.resizeTable();
-}
 
 function fsMimeType(suffix) {
     switch (suffix || '') {

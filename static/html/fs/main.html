@@ -11,36 +11,43 @@
 </head>
 <body>
 <div id="app">
-    <div style="padding: 5px 0 0 10px;">
-        路径：
-        <span v-for="(row, i) in pagePath"><span v-if="i>0"> >> </span><span class="folder" @click="gotoPagePath(i)">{{row}}</span></span>
-        <button class="upload" @click="uploadFile()">上传</button>
-        <button class="upload" @click="uploadBigFile()">大文件分片上传</button>
-        <span>{{uploadProgress}}</span>
-    </div>
-    <hr>
-
-    <table :style="{width: tableWidth}" class="thead">
-        <tr><td>名称</td><td>预览</td><td>大小</td><td>类型</td><td>修改时间</td><td>操作</td></tr>
-        <tr><td class="folder" @click="folderLeave()">..</td><td>-</td><td>-</td><td>-</td><td>- -</td></tr>
-    </table>
-    <div id="tbody-div" class="tbody-div">
-        <table :style="{width: tableWidth}">
+    <table style="width: 100%;">
+        <thead class="fix-th">
+            <tr><td colspan="6">
+                路径：
+                <span v-for="(row, i) in pagePath">
+                    <span v-if="i>0"> >> </span>
+                    <span class="folder" @click="gotoPagePath(i)">{{row}}</span>
+                </span>
+                <button class="upload" @click="uploadFile()">上传</button>
+                <button class="upload" @click="uploadBigFile()">大文件分片上传</button>
+                <span>{{uploadProgress}}</span>
+            </td></tr>
+            <tr class="th-bg">
+                <td>名称</td>
+                <td>预览</td>
+                <td>大小</td>
+                <td>类型</td>
+                <td>修改时间</td>
+                <td style="width: 80px;">操作</td>
+            </tr>
+            <tr><td class="folder" @click="folderLeave()" colspan="6">..</td></tr>
+        </thead>
+        <tbody>
             <tr v-for="(row, i) in files">
-                <td :title="row[1]" :class="row[0]=='d' ? 'folder' : 'file'" @click="openPath(row)">{{row[1]}}</td>
+                <td :title="row[1]" :class="row[0]=='d' ? 'folder' : 'file'" 
+                    @click="openPath(row)">{{row[1]}}</td>
                 <td v-html="row[6]"></td>
                 <td>{{row[2]}}</td>
-                <td>{{row[4]}}</td>
+                <td><div style="width: 60px;" class="nowarp">{{row[4]}}</div></td>
                 <td>{{row[3]}}</td>
-
                 <td v-if="row[0]=='d'">-</td>
                 <td v-if="row[0]=='-'">
                     <span class="funcBtn" @click="downloadFile(row[1])">下载</span>
                 </td>
-
             </tr>
-        </table>
-    </div>
+        </tbody>
+    </table>
 </div>
 
 </body>

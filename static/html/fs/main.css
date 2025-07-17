@@ -7,10 +7,10 @@ https://www.runoob.com/tags/att-link-media.html
     .folder, .file, .funcBtn, .upload {font-size: 36px;}
     table td:nth-of-type(5) {width: 98px;}
     .upload {margin: 0 0 0 50px !important;}
-    .tbody-div {height: calc(100% - 218px) !important;}
+    .folder, .file, .funcBtn { padding: 1vw 0; }
 }
 
-html, body, #app {
+html, body {
     margin: 0;
     height: 100%;
 }
@@ -38,7 +38,7 @@ body {
     border-width: 0.3vh;
 }
 
-td {
+td, .nowarp{
     white-space: nowrap;
     text-align: center;
     overflow: hidden;
@@ -46,28 +46,33 @@ td {
     white-space: nowrap;
 }
 
-.thead tr:nth-of-type(1){
+.th-bg {
     background-color: #808080e0;
 }
-.tbody-div {
-    height: calc(100% - 118px);
-    overflow: auto;
+
+thead td {
+    background: #5b585847;
+    backdrop-filter: blur(88px);
 }
-.tbody-div tr:hover, .thead tr:nth-of-type(2):hover {
+tbody td:nth-child(n+2) {
+    width: 1px;
+}
+
+tbody tr:hover, thead tr:nth-of-type(3):hover {
     background-color: #04fb0436;
 }
 table {
-    table-layout: fixed;
-    padding: 0 0 0 10px;
+    /* table-layout: fixed; */
 }
 table td:nth-of-type(1) {text-align: left; padding-left: 5px;}
-table td:nth-last-of-type(5) {width: 118px;}
-table td:nth-last-of-type(4) {width: 118px;}
-table td:nth-last-of-type(3) {width: 80px;}
-table td:nth-last-of-type(2) {width: 208px;}
-table td:nth-last-of-type(1) {width: 118px;}
 
 .preview {
     max-height: 36px;
     max-width: 110px;
+}
+
+.fix-th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
