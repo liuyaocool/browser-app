@@ -303,7 +303,7 @@ const vm = Vue.createApp({
 sqlInit();
 
 function sshFileChoose() {
-    fileGetText(content => vm.formdata.sshKey = content);
+    fileGetText().then(content => vm.formdata.sshKey = content);
 }
 
 document.onmousedown = function (ev) {
@@ -1030,4 +1030,53 @@ function cacheClear(auto) {
     console.log(`old:${hotLen} / new:${Object.keys(hotCount).length}`);
     localStorage.setItem('db_hot_key', JSON.stringify(hotKey));
     localStorage.setItem('db_hot_key_count', JSON.stringify(hotCount));
+}
+
+/**
+ * send http
+ * @param option
+ *  {
+ *      method: 'post',
+ *      url: '',
+ *      headers: {
+ *          'Content-Type', 'application/json'
+ *      },
+ *      body: '',
+ *      async: true,
+ *      progress: function(ev) { // 上传进度
+ *      },
+ *      success: function(res) {
+ *      },
+ *      error: function(res) {
+ *      },
+ *  }
+ */
+function doHttp(option) {
+    option = option ? option : {};
+    let http = new XMLHttpRequest();
+    http.open(option.method ? option.method : "post", option.url,
+        false === option.async ? false : true);
+    if (option.headers && (typeof option.headers == "object")) {
+        for (let headerName in option.headers) {
+            http.setRequestHeader(headerName, option.headers[headerName]);
+        }
+    }
+    if (http.upload) {
+        http.upload.addEventListener('progress' , function (ev) {
+            if (option.progress) {
+                option.progress(ev);
+            }
+        }, false);
+    }
+    http.send(option.body ? option.body : null);
+    http.onreadystatechange = function (res) {
+        if (4 != res.target.readyState) {
+            return;
+        }
+        if (200 == res.target.status && isFunc(option.success)) {
+            option.success(res.target.response);
+        } else if (isFunc(option.error)) {
+            option.error(res.target.response);
+        }
+    }
 }

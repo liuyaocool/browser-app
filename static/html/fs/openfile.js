@@ -22,16 +22,15 @@ document.addEventListener("wheel", function(event) {
 function nextText(autoNextLen) {
     if (readPos == -1) return;
     reading = true;
-    doHttp({
-        method: 'get',
-        url: `${apiPath}/fs/textGet?position=${readPos}&size=2048&path=${encodeURIComponent(filePath)}`,
-        success(res) {
+    fetch(`${apiPath}/fs/textGet?position=${readPos}&size=2048&path=${encodeURIComponent(filePath)}`)
+    .then(res => res.text())
+    .then(res => {
             res = JSON.parse(res);
             let ele = '', lines = (readPre + res.data).split('\n');
             readPre = res.data.endsWith('\n') ? '' : lines.pop();
             if (true === res.last) {
                 readPos = -1;
-                lines.push('', '', '到底了...');
+                lines.push('', '<hr>', '到底了...');
             } else {
                 readPos = res.position;
             }
@@ -47,7 +46,6 @@ function nextText(autoNextLen) {
             reading = false;
             console.log(autoNextLen)
             if ((canGetText() && autoNextLen < 0) || autoNextLen > 0) nextText(--autoNextLen);
-        }
     })
 }
 

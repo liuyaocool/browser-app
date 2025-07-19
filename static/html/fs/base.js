@@ -25,6 +25,7 @@ function fsMimeType(suffix) {
         case 'properties':
         case 'conf':
         case 'xml':
+        case 'desktop':
         case 'log': return FS_TYPE.TEXT;
         default: return '';
     }

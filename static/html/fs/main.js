@@ -103,34 +103,31 @@ const vm = createApp({
             location.href = `${apiPath}/fs/download?path=` + encodeURIComponent(this.getPagePath() + fileName);
         },
         uploadFile() {
-            if (vm.pagePath.length < 1) {
-                vm.uploadProgress = '请先进入一个目录';
+            if (this.pagePath.length < 1) {
+                this.uploadProgress = '请先进入一个目录';
                 return;
             }
             let that = this;
-            fileChooser(null, function (file) {
+            fileChooser().then(file => {
                 let formData = new FormData();
                 formData.append("file", file);
                 formData.append("dir", that.getPagePath());
-                doHttp({
-                    url: apiPath + "/fs/uploadFile",
-                    body: formData,
+                fileUpload(apiPath + "/fs/uploadFile", formData, {
                     progress: e => {
-                        vm.uploadProgress = (e.loaded / e.total * 100 | 0) + '%';
-                    },
-                    success: res => {
-                        vm.uploadProgress = res;
+                        that.uploadProgress = (e.loaded / e.total * 100 | 0) + '%';
                     }
+                }).then(res => {
+                    that.uploadProgress = res;
                 });
             });
         },
         uploadBigFile() {
-            if (vm.pagePath.length < 1) {
-                vm.uploadProgress = '请先进入一个目录';
+            if (this.pagePath.length < 1) {
+                this.uploadProgress = '请先进入一个目录';
                 return;
             }
             let that = this;
-            fileChooser(null, function (file) {
+            fileChooser().then(file => {
                 let formData = new FormData(),
                     size = file.size,
                     partSize = 5*1024*1024,
@@ -152,19 +149,16 @@ const vm = createApp({
             formData.set("file", file.slice(startIdx, endIdx));
             formData.set("isLastPart", isLast);
             let that = this;
-            doHttp({
-                url: apiPath + "/fs/uploadBigFile",
-                body: formData,
+            fileUpload(apiPath + "/fs/uploadBigFile", formData, {
                 progress: e => {
-                    vm.uploadProgress = `${partIdx + 1}/${partCount} : ${(e.loaded / e.total * 100 | 0)}%`;
-                },
-                success: res => {
-                    if (isLast) {
-                        vm.uploadProgress = res
-                    } else {
-                        that.uploadPart(file, formData, partSize, partCount, partIdx+1);
-                    };
+                    that.uploadProgress = `${partIdx + 1}/${partCount} : ${(e.loaded / e.total * 100 | 0)}%`;
                 }
+            }).then(res => {
+                if (isLast) {
+                    that.uploadProgress = res
+                } else {
+                    that.uploadPart(file, formData, partSize, partCount, partIdx+1);
+                };
             });
         },
         getFileFullPath(filename) {
