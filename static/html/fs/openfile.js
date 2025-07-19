@@ -1,4 +1,4 @@
-const path = Global.apiPath;
+const apiPath = Global.apiPath;
 const filePath = location.hash.substring(1);
 let readPos = 0, reading = false, readPre = '', readLineNo = 1;
 
@@ -24,7 +24,7 @@ function nextText(autoNextLen) {
     reading = true;
     doHttp({
         method: 'get',
-        url: `${path}/fs/textGet?position=${readPos}&size=2048&path=${encodeURIComponent(filePath)}`,
+        url: `${apiPath}/fs/textGet?position=${readPos}&size=2048&path=${encodeURIComponent(filePath)}`,
         success(res) {
             res = JSON.parse(res);
             let ele = '', lines = (readPre + res.data).split('\n');
@@ -59,11 +59,11 @@ function canGetText() {
 
 switch (location.search.substring(1)) {
     case FS_TYPE.IMAGE:
-        document.body.innerHTML = `<img src="${path}/fs/mediaPlay?path=${encodeURIComponent(filePath)}">`;
+        document.body.innerHTML = `<img src="${apiPath}/fs/mediaPlay?path=${encodeURIComponent(filePath)}">`;
         break;
     case FS_TYPE.VIDEO:
         document.body.innerHTML = `<video width="100%" height="100%" controls>
-            <source type="video/mp4" src="${path}/fs/mediaPlay?path=${encodeURIComponent(filePath)}">
+            <source type="video/mp4" src="${apiPath}/fs/mediaPlay?path=${encodeURIComponent(filePath)}">
             </video>`;
         break;
     case FS_TYPE.TEXT:

@@ -11,10 +11,17 @@
 </head>
 <body>
 <div id="app">
-    <table style="width: 100%;">
+    <table>
+        <!-- 添加这个dom 解决首行跨列导致的宽度失效 -->
+        <colgroup>
+            <col style="width: 100%;">
+            <col style="width: var(--preview-width);">
+            <col style="width: 80px;">
+            <col style="width: 166px;">
+            <col style="width: 66px;">
+        </colgroup>
         <thead class="fix-th">
-            <tr><td colspan="6">
-                路径：
+            <tr><td colspan="5">
                 <span v-for="(row, i) in pagePath">
                     <span v-if="i>0"> >> </span>
                     <span class="folder" @click="gotoPagePath(i)">{{row}}</span>
@@ -27,23 +34,22 @@
                 <td>名称</td>
                 <td>预览</td>
                 <td>大小</td>
-                <td>类型</td>
                 <td>修改时间</td>
-                <td style="width: 80px;">操作</td>
+                <td>操作</td>
             </tr>
-            <tr><td class="folder" @click="folderLeave()" colspan="6">..</td></tr>
+            <tr><td class="folder" @click="folderLeave()" colspan="5">..</td></tr>
         </thead>
         <tbody>
             <tr v-for="(row, i) in files">
-                <td :title="row[1]" :class="row[0]=='d' ? 'folder' : 'file'" 
-                    @click="openPath(row)">{{row[1]}}</td>
-                <td v-html="row[6]"></td>
-                <td>{{row[2]}}</td>
-                <td><div style="width: 60px;" class="nowarp">{{row[4]}}</div></td>
-                <td>{{row[3]}}</td>
-                <td v-if="row[0]=='d'">-</td>
-                <td v-if="row[0]=='-'">
-                    <span class="funcBtn" @click="downloadFile(row[1])">下载</span>
+                <td :title="row.name" :class="row.type=='folder' ? 'folder' : 'file'" 
+                    @click="clickName(row)">{{row.name}}</td>
+                <td v-html="row.preview"></td>
+                <td>{{row.size}}</td>
+                <!-- <td><div style="width: 60px;" class="nowarp">{{row.suffix}}</div></td> -->
+                <td>{{row.time}}</td>
+                <td v-if="row.type=='folder'">-</td>
+                <td v-else>
+                    <span class="funcBtn" @click="downloadFile(row.name)">下载</span>
                 </td>
             </tr>
         </tbody>
@@ -55,6 +61,7 @@
 <script src="../../js/config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.4/vue.global.min.js"></script>
 <script src="https://resource.liuyao.link/js/my/util.js"></script>
+<script src="base.js"></script>
 <script src="../../js/base.js"></script>
 <script src="main.js?v=1.1"></script>
 

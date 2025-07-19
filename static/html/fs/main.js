@@ -1,5 +1,5 @@
 
-const path = Global.apiPath;
+const apiPath = Global.apiPath;
 const {createApp} = Vue;
 const vm = createApp({
     data() {
@@ -7,52 +7,59 @@ const vm = createApp({
             uploadProgress: '',
             pagePath: [], // every ends with '/'
             files: [
-                //    0          1             2             3           4           5             6
-                // ['- / d', 'file name', 'file size', 'modify time', 'suffix', 'full path', 'preview html']
+                /**
+                {
+                    "name": "",
+                    "size": "",
+                    "time": "",
+                    "suffix": "", // zip, tar.gz, tar.zst
+                    "type": "", // FS_TYPE
+                    "path": "",
+                }
+                */
             ],
         }
     },
     created() {
         if (location.hash) {
-            this.pagePath = location.hash.slice(1).match(/[^\/]+\/?|\//g);
+            this.pagePath = decodeURIComponent(location.hash).slice(1).match(/[^\/]+\/?|\//g);
         }
         this.getFiles();
     },
     methods: {
-        getFiles() {
-            let pp = location.hash = this.getPagePath();
-            let that = this;
-            doHttp({
-                url: path + "/fs/getFolderChilds",
-                body: pp && !pp.endsWith('/') ? (pp + '/') : pp,
-                success: function (res) {
-                    res = JSON.parse(res);
-                    let files = [];
-                    let tmp;
-                    for (let i = 0; i < res.length; i+=4) {
-                        tmp = [];
-                        for (let j = 0; j < 4; j++) tmp.push(res[i+j]);
-                        tmp.push(that.getFileSuffix(tmp));
-                        tmp.push(that.getFileFullPath(tmp));
-                        tmp.push(that.getFilePreview(tmp));
-                        files.push(tmp);
-                    }
-                    // sort
-                    files.sort((f1, f2) => {
-                        if (f1[0][0] != f2[0][0]) return f2[0].charCodeAt(0) - f1[0].charCodeAt(0);
-                        let f1Name = f1[1].toLowerCase(),
-                            f2Name = f2[1].toLowerCase(),
-                            min = Math.min(f1Name.length, f2Name.length);
-                        for (let i = 0; i < min; i++)
-                            if (f1Name[i] != f2Name[i])
-                                return f1Name.charCodeAt(i) - f2Name.charCodeAt(i);
-                        return f1Name.length - f2Name.length;
-                    });
-                    that.files = files;
-                    // 回到页头
-                    document.body.scrollTop = document.documentElement.scrollTop = 0;
+        async getFiles() {
+            let pp = location.hash = this.getPagePath(), files = [], tmp;
+            let res = await (await fetch(apiPath + "/fs/getFolderChilds", {
+                method: 'POST',
+                body: pp && !pp.endsWith('/') ? (pp + '/') : pp
+            })).json();
+            for (let i = 0; i < res.length; i+=4) {
+                files.push(tmp = {});
+                tmp.name = res[i+1];
+                tmp.size = res[i+2];
+                tmp.time = res[i+3];
+                tmp.suffix = res[i] == 'd' ? '-' : getFileSuffix(tmp.name);
+                tmp.type = res[i] == 'd' ? FS_TYPE.FOLDER : fsMimeType(tmp.suffix);
+                tmp.path = this.getFileFullPath(tmp.name);
+                tmp.preview = this.getFilePreview(tmp.suffix, tmp.path);
+            }
+            // sort
+            files.sort((f1, f2) => {
+                if (f1.type != f2.type) {
+                    if (f1.type == FS_TYPE.FOLDER) return -1;
+                    if (f2.type == FS_TYPE.FOLDER) return 1;
                 }
+                let f1Name = f1.name.toLowerCase(),
+                    f2Name = f2.name.toLowerCase(),
+                    min = Math.min(f1Name.length, f2Name.length);
+                for (let i = 0; i < min; i++)
+                    if (f1Name[i] != f2Name[i])
+                        return f1Name.charCodeAt(i) - f2Name.charCodeAt(i);
+                return f1Name.length - f2Name.length;
             });
+            this.files = files;
+            // 回到页头
+            document.body.scrollTop = document.documentElement.scrollTop = 0;
         },
         toTop() {
             // document.getElementById('tbody-div').scrollTop = 0;
@@ -79,21 +86,21 @@ const vm = createApp({
         getPagePath() {
             return this.pagePath.join('').replace("//", "/");
         },
-        openPath(row) {
-            if (row[0] == 'd') {
-                this.folderEnter(row[1]);
+        clickName(row) {
+            if (row.type == FS_TYPE.FOLDER) {
+                this.folderEnter(row.name);
                 return;
             }
             // row[5]:filePath   row[4]:fileSuffix
             let a;
-            if (a = fsMimeType(row[4])) {
-                window.open(`openfile.html?${a}#${row[5]}`);
+            if (a = row.type) {
+                window.open(`openfile.html?${a}#${row.path}`);
                 return;
             }
             alert("暂不支持当前格式.");
         },
         downloadFile(fileName) {
-            location.href = `${path}/fs/download?path=` + encodeURIComponent(this.getPagePath() + fileName);
+            location.href = `${apiPath}/fs/download?path=` + encodeURIComponent(this.getPagePath() + fileName);
         },
         uploadFile() {
             if (vm.pagePath.length < 1) {
@@ -106,7 +113,7 @@ const vm = createApp({
                 formData.append("file", file);
                 formData.append("dir", that.getPagePath());
                 doHttp({
-                    url: path + "/fs/uploadFile",
+                    url: apiPath + "/fs/uploadFile",
                     body: formData,
                     progress: e => {
                         vm.uploadProgress = (e.loaded / e.total * 100 | 0) + '%';
@@ -146,7 +153,7 @@ const vm = createApp({
             formData.set("isLastPart", isLast);
             let that = this;
             doHttp({
-                url: path + "/fs/uploadBigFile",
+                url: apiPath + "/fs/uploadBigFile",
                 body: formData,
                 progress: e => {
                     vm.uploadProgress = `${partIdx + 1}/${partCount} : ${(e.loaded / e.total * 100 | 0)}%`;
@@ -160,52 +167,19 @@ const vm = createApp({
                 }
             });
         },
-        getFileFullPath(row) {
-            return `${this.getPagePath()}/${row[1]}`;
+        getFileFullPath(filename) {
+            return `${this.getPagePath()}/${filename}`;
         },
-        getFilePreview(row) {
-            switch(fsMimeType(row[4])) {
+        getFilePreview(suffix, filepath) {
+            switch(fsMimeType(suffix)) {
                 case FS_TYPE.IMAGE:
-                    return `<img class="preview" src="${path}/fs/mediaPlay?path=${encodeURIComponent(row[5])}">`;
+                    return `<img class="preview" 
+                    src="${apiPath}/fs/mediaPlay?path=${encodeURIComponent(filepath)}">`;
                 case FS_TYPE.VIDEO:
-                    return `<video class="preview" src="${path}/fs/mediaPlay?path=${encodeURIComponent(row[5])}"></video>`;
+                    return `<video class="preview" 
+                    src="${apiPath}/fs/mediaPlay?path=${encodeURIComponent(filepath)}"></video>`;
                 default: return "-";
             }
         },
-        getFileSuffix(row) {
-            // 从后往前数第几个
-            let backNoTypeMap = {2: ['tar']};
-            let split = row[1].split('.');
-            if ('d' == row[0] || split.length < 2) {
-                return '-';
-            }
-            for (const len in backNoTypeMap) {
-                for (let i = 0; i < backNoTypeMap[len].length; i++) {
-                    if (split[split.length - len] == backNoTypeMap[len][i]) {
-                        return split.slice(split.length-len).join('.');
-                    }
-                }
-            }
-            return split[split.length-1];
-        },
     },
 }).mount("#app");
-
-function fsMimeType(suffix) {
-    switch (suffix || '') {
-        case 'webp':
-        case 'png':
-        case 'jpeg':
-        case 'jpg':
-        case 'svg':
-        case 'gif': return FS_TYPE.IMAGE;
-        case 'mp4': return FS_TYPE.VIDEO;
-        case 'txt':
-        case 'md':
-        case 'properties':
-        case 'conf':
-        case 'xml':
-        case 'log': return FS_TYPE.TEXT;
-        default: return '';
-    }
-}

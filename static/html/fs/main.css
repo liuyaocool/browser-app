@@ -9,6 +9,9 @@ https://www.runoob.com/tags/att-link-media.html
     .upload {margin: 0 0 0 50px !important;}
     .folder, .file, .funcBtn { padding: 1vw 0; }
 }
+:root {
+    --preview-width: 90px;
+}
 
 html, body {
     margin: 0;
@@ -38,12 +41,11 @@ body {
     border-width: 0.3vh;
 }
 
-td, .nowarp{
+td {
     white-space: nowrap;
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .th-bg {
@@ -54,21 +56,20 @@ thead td {
     background: #5b585847;
     backdrop-filter: blur(88px);
 }
-tbody td:nth-child(n+2) {
-    width: 1px;
-}
 
 tbody tr:hover, thead tr:nth-of-type(3):hover {
     background-color: #04fb0436;
 }
 table {
-    /* table-layout: fixed; */
+    /* 超出宽度自动隐藏 */
+    table-layout: fixed;
+    width: 100%;
 }
 table td:nth-of-type(1) {text-align: left; padding-left: 5px;}
 
 .preview {
-    max-height: 36px;
-    max-width: 110px;
+    max-height: calc(var(--preview-width) * 2);
+    max-width: var(--preview-width);
 }
 
 .fix-th {
