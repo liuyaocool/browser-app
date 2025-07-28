@@ -6,15 +6,6 @@
     --preview-width: 90px;
 }
 
-html, body {
-    margin: 0;
-    height: 100%;
-}
-body {
-    background-color: #181a1b;
-    color: white;
-}
-
 .folder, .funcBtn { text-decoration: underline; }
 
 .folder, .funcBtn, .file {
@@ -31,7 +22,7 @@ body {
 
 .upload {
     margin: 0 0 0 10px;
-    border-width: 0.3vh;
+    border-width: 4px;
 }
 
 td {
