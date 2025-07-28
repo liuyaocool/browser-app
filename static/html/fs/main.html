@@ -4,24 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <title>FILE SYSTEM</title>
-
-    <link rel="stylesheet" href="../../css/theme.css"/>
-    <link rel="stylesheet" href="main.css?v=1.3"/>
-
 </head>
 <body>
 <div id="app">
     <table>
         <!-- 添加这个dom 解决首行跨列导致的宽度失效 -->
-        <colgroup>
-            <col style="width: 100%;">
-            <col style="width: var(--preview-width);">
-            <col style="width: 80px;">
-            <col style="width: 166px;">
-            <col style="width: 66px;">
-        </colgroup>
+        <colgroup><col><col><col><col><col></colgroup>
         <thead class="fix-th">
-            <tr><td colspan="5">
+            <tr><td colspan="5" style="white-space: normal;">
                 <span v-for="(row, i) in pagePath">
                     <span v-if="i>0"> >> </span>
                     <span class="folder" @click="gotoPagePath(i)">{{row}}</span>
@@ -58,9 +48,11 @@
 
 </body>
 
+<link rel="stylesheet" href="../../css/theme.css"/>
+<script src="https://resource.liuyao.link/js/my/util.js"></script>
+<script>includeCss('main.css?v=1.5', 'main-phone.css?v=1.5')</script>
 <script src="../../js/config.js"></script>
 <script src="../../js/vue3.global.js"></script>
-<script src="https://resource.liuyao.link/js/my/util.js"></script>
 <script src="base.js?v=1"></script>
 <script src="main.js?v=1.1"></script>
 

@@ -1,7 +1,3 @@
-/* 竖排 + 非hover */
-@media (orientation: portrait) and (hover: none) {
-}
-
 :root {
     --preview-width: 90px;
 }
@@ -19,6 +15,7 @@ body {
 
 .folder, .funcBtn, .file {
     cursor: pointer;
+    padding: 1vw 0;
 }
 
 .folder:hover, .funcBtn:hover, .file:hover {
@@ -30,8 +27,11 @@ body {
 .folder { color: #e3ff00; }
 
 .upload {
-    margin: 0 0 0 10px;
+    margin: 0 0 0 50px;
     border-width: 0.3vh;
+}
+.folder, .file, .funcBtn, .upload {
+    font-size: 36px;
 }
 
 td {
@@ -45,7 +45,7 @@ colgroup > col:nth-child(1) {width: 100%;}
 colgroup > col:nth-child(2) {width: var(--preview-width);}
 colgroup > col:nth-child(3) {width: 80px;}
 colgroup > col:nth-child(4) {width: 166px;}
-colgroup > col:nth-child(5) {width: 66px;}
+colgroup > col:nth-child(5) {width: 100px;}
 
 .th-bg {
     background-color: #808080e0;
