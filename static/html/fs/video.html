@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OPEN FILE</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        .btns {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            opacity: 0;
+        }
+        body:hover .btns {
+            opacity: 1;
+        }
+        
+    </style>
+</head>
+<body>
+    <video id="vdo" width="100%" height="100%" controls>
+    </video>
+    <div class="btns">
+        <button type="button">loop</button>
+    </div>
+    <span id="msg" style="position: fixed; left: 0px; top: 0px; z-index: 99;"></span>
+</body>
+
+<script src="base.js"></script>
+
+<script>
+    const filePath = location.hash.substring(1)
+        ,videoDom = document.getElementById('vdo')
+        ,startP = [] // 鼠标/手指 开始的点
+        ,fingerPx = 600 // 一个大拇哥的像素点 PC(27寸):300 平板(11.5寸):260 手机(6.7寸):600 
+        ,speed = [1.25, 1.5, 2, 2.5, 3] // 倍速
+        ,progressPer10px = videoDom.duration // 每滑动10像素 快进多少秒
+        ,eventPx = 10 // 滑动多少px触发事件
+        ;
+    let startTime = 0
+        ,startTimeout = null
+        ,speedIdx = 1 // 第几个倍速播放
+        ,type = null // progress: 进度;  voice: 音量;  speed: 速度
+        ,videoPaused = false // 是否暂停播放
+        ,videoTime = 0 // 操作时视频当前播放进度 s
+        ,progressStartPx = 0 // 操作进度 事件触发时的偏移px
+        ;
+    videoDom.innerHTML += `<source type="video/mp4" src="${filePath}">`;
+
+    function mouseStart(p) {
+        showMsg(`start: ${p.clientX} / ${p.clientY}`);
+        startP[0] = p.clientX;
+        startP[1] = p.clientY;
+        startTime = Date.now();
+        startTimeout = setTimeout(() => {
+            type = 'speed';
+            videoDom.playbackRate = speed[speedIdx];
+            showMsg(`speed(${speed[speedIdx]})`);
+        }, 1000);
+    }
+
+    function mouseMove(p) {
+        if (0 == startTime)
+            return;
+        let x = p.clientX - startP[0]
+            ,y = p.clientY - startP[1]
+            ,t = Date.now();
+        if (!type) {
+            if (x > eventPx || x < -eventPx) {
+                type = 'progress';
+                videoPaused = videoDom.paused;
+                videoTime = videoDom.currentTime;
+                progressStartPx = x;
+                videoDom.pause();
+            } else if(y > eventPx || y < -eventPx) {
+                type = 'voice';
+            } else {
+                return;
+            }
+        }
+        clearTimeout(startTimeout);
+        switch(type) {
+            case 'progress':
+                videoDom.currentTime = videoTime + x - progressStartPx;
+                break;
+        }
+        showMsg(`move(${type}): ${x.toFixed()} / ${y.toFixed()}`);
+    }
+
+    function mouseEnd(e) {
+        if (0 == startTime)
+            return;
+        clearTimeout(startTimeout);
+        switch(type) {
+            case 'progress':
+                if (!videoPaused) {
+                    console.log('play')
+                    videoDom.play();
+                }
+                break;
+            case 'speed':
+                videoDom.playbackRate = 1;
+                break;
+        }
+        showMsg('stop');
+        startTime = 0;
+        type = null;
+    }
+
+    videoDom.addEventListener('touchstart', e => mouseStart(e.touches[0]));
+    videoDom.addEventListener('mousedown', e => mouseStart(e));
+    videoDom.addEventListener('touchmove', e => mouseMove(e.touches[0]));
+    videoDom.addEventListener('mousemove', e => mouseMove(e));
+    videoDom.addEventListener('touchend', mouseEnd);
+    videoDom.addEventListener('mouseup', mouseEnd);
+    // 禁用点击视频播放
+    videoDom.addEventListener('click', e => {
+         e.preventDefault();
+         console.log('aaa');
+        
+    });
+    // 禁用手机长按打开右键菜单
+    videoDom.addEventListener('contextmenu', e => e.preventDefault());
+
+    function showMsg(msg) {
+        document.getElementById('msg').innerText = msg;
+    }
+</script>
+</html>

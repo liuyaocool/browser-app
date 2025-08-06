@@ -91,16 +91,21 @@ const vm = createApp({
                 this.folderEnter(row.name);
                 return;
             }
-            // row[5]:filePath   row[4]:fileSuffix
             let a;
-            if (a = row.type) {
-                window.open(`openfile.html?${a}#${row.path}`);
-                return;
+            if (!(a = row.type))
+                return alert("暂不支持当前格式.");
+            switch(a) {
+                case FS_TYPE.VIDEO:
+                    window.open(`video.html#${apiPath}/fs/mediaPlay?path=${encodeURIComponent(row.path)}`);
+                    break;
+                default:
+                    window.open(`openfile.html?${a}#${row.path}`);
+                    break;
             }
-            alert("暂不支持当前格式.");
         },
         downloadFile(fileName) {
-            location.href = `${apiPath}/fs/download?path=` + encodeURIComponent(this.getPagePath() + fileName);
+            location.href = `${apiPath}/fs/download?path=` 
+                + encodeURIComponent(this.getPagePath() + fileName);
         },
         uploadFile() {
             if (this.pagePath.length < 1) {
