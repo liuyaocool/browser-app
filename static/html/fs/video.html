@@ -30,15 +30,12 @@
     <span id="msg" style="position: fixed; left: 0px; top: 0px; z-index: 99;"></span>
 </body>
 
-<script src="base.js"></script>
-
 <script>
     const filePath = location.hash.substring(1)
         ,videoDom = document.getElementById('vdo')
         ,startP = [] // 鼠标/手指 开始的点
         ,fingerPx = 600 // 一个大拇哥的像素点 PC(27寸):300 平板(11.5寸):260 手机(6.7寸):600 
         ,speed = [1.25, 1.5, 2, 2.5, 3] // 倍速
-        ,progressPer10px = videoDom.duration // 每滑动10像素 快进多少秒
         ,eventPx = 10 // 滑动多少px触发事件
         ;
     let startTime = 0
@@ -47,9 +44,16 @@
         ,type = null // progress: 进度;  voice: 音量;  speed: 速度
         ,videoPaused = false // 是否暂停播放
         ,videoTime = 0 // 操作时视频当前播放进度 s
-        ,progressStartPx = 0 // 操作进度 事件触发时的偏移px
+        // 简单测试 从左滑倒右是15分钟左右
+        // videoDom.duration: 视频时长
+        // 快进秒数 = 滑动像素数 x progressPerPxRatio
+        ,progressPerPxRatio = 1
+        // ,progressStartPx = 0 // 操作进度 事件触发时的偏移px
         ;
     videoDom.innerHTML += `<source type="video/mp4" src="${filePath}">`;
+    videoDom.addEventListener('loadedmetadata', function(e) {
+        progressPerPxRatio = Math.min(videoDom.duration/15/60, 1);
+    });
 
     function mouseStart(p) {
         showMsg(`start: ${p.clientX} / ${p.clientY}`);
@@ -74,7 +78,7 @@
                 type = 'progress';
                 videoPaused = videoDom.paused;
                 videoTime = videoDom.currentTime;
-                progressStartPx = x;
+                startP[0] = p.clientX;
                 videoDom.pause();
             } else if(y > eventPx || y < -eventPx) {
                 type = 'voice';
@@ -85,7 +89,7 @@
         clearTimeout(startTimeout);
         switch(type) {
             case 'progress':
-                videoDom.currentTime = videoTime + x - progressStartPx;
+                videoDom.currentTime = videoTime + (x * progressPerPxRatio).toFixed()*1;
                 break;
         }
         showMsg(`move(${type}): ${x.toFixed()} / ${y.toFixed()}`);
@@ -98,7 +102,6 @@
         switch(type) {
             case 'progress':
                 if (!videoPaused) {
-                    console.log('play')
                     videoDom.play();
                 }
                 break;
@@ -120,7 +123,7 @@
     // 禁用点击视频播放
     videoDom.addEventListener('click', e => {
          e.preventDefault();
-         console.log('aaa');
+         console.log('click');
         
     });
     // 禁用手机长按打开右键菜单
