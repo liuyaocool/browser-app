@@ -2,24 +2,26 @@ package prv.liuyao.bsutils.utils;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+@Slf4j
 public class Cache {
 
-    private static final com.google.common.cache.Cache CACHE = CacheBuilder.newBuilder()
+    private static final com.google.common.cache.Cache<Object, Object> CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(5, TimeUnit.MINUTES)
             .removalListener(Cache::removalListener)
             .build();
 
-    private static void removalListener(RemovalNotification<String, Object> notification) {
-        System.out.println("CacheUtil.CACHE.delete: " + notification.getKey());
+    private static void removalListener(RemovalNotification<Object, Object> notification) {
+        log.info("CacheUtil.CACHE.delete: {}", notification.getKey());
         if (notification.getValue() instanceof AutoCloseable) {
             try {
                 ((AutoCloseable) notification.getValue()).close();
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("CacheUtil.CACHE.delete error", e);
             }
         }
         /**
@@ -30,23 +32,23 @@ public class Cache {
         CACHE.cleanUp();
     }
 
-    public static void set(String key, Object val) {
+    public static void set(Object key, Object val) {
         CACHE.put(key, val);
     }
 
-    public static <T> T get(String key, Supplier<T> loader) {
+    public static <T> T get(Object key, Supplier<T> newCacher) {
         Object o = get(key);
         if (null == o) synchronized (CACHE) {
-            if (null == (o = get(key))) set(key, o = loader.get());
+            if (null == (o = get(key))) set(key, o = newCacher.get());
         }
         return (T) o;
     }
 
-    public static <T> T get(String key) {
+    public static <T> T get(Object key) {
         return (T) CACHE.getIfPresent(key);
     }
 
-    public static void invalidCache(String key) {
+    public static void invalidCache(Object key) {
         CACHE.invalidate(key);
     }
 

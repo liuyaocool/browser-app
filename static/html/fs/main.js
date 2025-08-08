@@ -96,7 +96,7 @@ const vm = createApp({
                 return alert("暂不支持当前格式.");
             switch(a) {
                 case FS_TYPE.VIDEO:
-                    window.open(`video.html#${apiPath}/fs/mediaPlay?path=${encodeURIComponent(row.path)}`);
+                    window.open(`video.html#${apiPath}/fs/res?path=${encodeURIComponent(row.path)}`);
                     break;
                 default:
                     window.open(`openfile.html?${a}#${row.path}`);
@@ -104,7 +104,7 @@ const vm = createApp({
             }
         },
         downloadFile(fileName) {
-            location.href = `${apiPath}/fs/download?path=` 
+            location.href = `${apiPath}/fs/res?download=true&path=`
                 + encodeURIComponent(this.getPagePath() + fileName);
         },
         uploadFile() {

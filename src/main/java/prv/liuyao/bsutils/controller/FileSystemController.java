@@ -2,8 +2,11 @@ package prv.liuyao.bsutils.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import liuyao.utils.IOUtils;
+import liuyao.utils.Stringutils;
+import liuyao.utils.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,7 +22,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
@@ -51,6 +56,89 @@ public class FileSystemController {
         return childs;
     }
 
+    // return int can error
+    @GetMapping("/res")
+    public void a(boolean download, String path,
+                 HttpServletRequest request, HttpServletResponse response
+    ) throws UnsupportedEncodingException {
+        path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
+        Path resPath = Paths.get(path);
+        if (!Files.exists(resPath)) {
+            response.setCharacterEncoding(GlobalConstant.DEFAULT_CHARSET.toString());
+            responseError(response, HttpServletResponse.SC_NOT_FOUND, null);
+            return;
+        }
+        // 获取文件长度
+        long fileLength = resPath.toFile().length(), contentLength = fileLength;
+        // 处理Range请求
+        String rangeHeader = request.getHeader(HttpHeaders.RANGE);
+        long start = 0;
+        if (null != rangeHeader && rangeHeader.startsWith("bytes=")) {
+            long end = fileLength - 1;
+            String[] ranges = rangeHeader.substring(6).split("-");
+            if (!Stringutils.isNum(ranges[0])) {
+                responseRangeError(response, fileLength);
+                return;
+            }
+            start = Long.parseLong(ranges[0]);
+            if (ranges.length > 1) {
+                if (!Stringutils.isNum(ranges[1])) {
+                    responseRangeError(response, fileLength);
+                    return;
+                }
+                end = Math.min(Long.parseLong(ranges[1]), end);
+            }
+            contentLength = end - start + 1;
+            response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+            response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", start, end, fileLength));
+        }
+
+        if (download) {
+            String name = URLEncoder.encode(resPath.getFileName().toString(),
+                    StandardCharsets.UTF_8.name()).replace("+", " ");
+            response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + name);
+        }
+        response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+        response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(contentLength));
+
+        // Zero-copy 传输
+        // try(AutoCloseable),
+        try (FileChannel fileChannel = FileChannel.open(resPath, StandardOpenOption.READ);
+             // response.getOutputStream() 会被tomcat/jetty自动释放
+             WritableByteChannel outChannel = Channels.newChannel(response.getOutputStream())
+        ) {
+            String mimeType = Files.probeContentType(resPath);
+            if (StringUtils.hasText(mimeType)) {
+                response.setContentType(mimeType);
+            }
+            long transferred = fileChannel.transferTo(start, contentLength, outChannel);
+            if (transferred < contentLength) {
+                // System.out.format("----------- %s / %s %s -----------\n", transferred, contentLength, rangeHeader);
+                // return responseError(response, HttpServletResponse.SC_NOT_IMPLEMENTED, "Incomplete transfer");
+            }
+        } catch (IOException e) {
+            log.error("transfer error", e);
+            responseError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error transfer");
+        }
+    }
+
+    private void responseRangeError(HttpServletResponse response, long fileLength) {
+        response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + fileLength);
+        responseError(response, HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE,
+                "Invalid parameter: Range");
+    }
+
+    private void responseError(HttpServletResponse response, int code, @Nullable String msg) {
+        // response.setStatus(code);
+        if (null != msg && !msg.isEmpty()) {
+            try {
+                response.sendError(code, msg);
+                // response.getWriter().write(msg);
+            } catch (IOException e) {
+                log.error("response error {} {}", code, msg, e);
+            }
+        }
+    }
 
     @GetMapping("/download")
     public void down(HttpServletResponse response, String path) {

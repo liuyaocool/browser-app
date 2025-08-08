@@ -16,6 +16,7 @@ public class NonStaticResourceHttpRequestHandler extends ResourceHttpRequestHand
   @Override
   protected Resource getResource(HttpServletRequest request) {
     final Path filePath = (Path) request.getAttribute(ATTR_FILE);
+    // block IO
     return new FileSystemResource(filePath);
   }
 

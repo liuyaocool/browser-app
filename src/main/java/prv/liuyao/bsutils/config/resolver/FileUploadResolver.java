@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *             },
  *  })
  */
-@Component
+// @Component
 public class FileUploadResolver extends CommonsMultipartResolver implements ProgressListener {
 
     /**
