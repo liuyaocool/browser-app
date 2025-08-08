@@ -40,7 +40,7 @@ const vm = createApp({
                 tmp.time = res[i+3];
                 tmp.suffix = res[i] == 'd' ? '-' : getFileSuffix(tmp.name);
                 tmp.type = res[i] == 'd' ? FS_TYPE.FOLDER : fsMimeType(tmp.suffix);
-                tmp.path = this.getFileFullPath(tmp.name);
+                tmp.path = `${this.getPagePath()}${tmp.name}`;
                 tmp.preview = this.getFilePreview(tmp.suffix, tmp.path);
             }
             // sort
@@ -166,17 +166,14 @@ const vm = createApp({
                 };
             });
         },
-        getFileFullPath(filename) {
-            return `${this.getPagePath()}/${filename}`;
-        },
         getFilePreview(suffix, filepath) {
             switch(fsMimeType(suffix)) {
                 case FS_TYPE.IMAGE:
                     return `<img class="preview" 
-                    src="${apiPath}/fs/mediaPlay?path=${encodeURIComponent(filepath)}">`;
+                    src="${apiPath}/fs/res?path=${encodeURIComponent(filepath)}">`;
                 case FS_TYPE.VIDEO:
                     return `<video class="preview" 
-                    src="${apiPath}/fs/mediaPlay?path=${encodeURIComponent(filepath)}"></video>`;
+                    src="${apiPath}/fs/res?path=${encodeURIComponent(filepath)}"></video>`;
                 default: return "-";
             }
         },
