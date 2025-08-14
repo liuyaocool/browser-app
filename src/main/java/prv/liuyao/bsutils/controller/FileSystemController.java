@@ -62,8 +62,10 @@ public class FileSystemController {
 
     // return int can error
     @GetMapping("/res")
-    public void a(boolean download, String path,
-                 HttpServletRequest request, HttpServletResponse response
+    public void a(
+            boolean download, String path,
+            @RequestHeader(value = HttpHeaders.RANGE, required = false) String rangeHeader,
+            HttpServletRequest request, HttpServletResponse response
     ) throws UnsupportedEncodingException {
         path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
         Path resPath = Paths.get(path);
@@ -75,7 +77,6 @@ public class FileSystemController {
         // 获取文件长度
         long fileLength = resPath.toFile().length(), contentLength = fileLength;
         // 处理Range请求
-        String rangeHeader = request.getHeader(HttpHeaders.RANGE);
         long start = 0;
         if (null != rangeHeader && rangeHeader.startsWith("bytes=")) {
             long end;
