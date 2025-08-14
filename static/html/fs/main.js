@@ -104,7 +104,7 @@ const vm = createApp({
             }
         },
         downloadFile(fileName) {
-            location.href = `${apiPath}/fs/res?download=true&path=`
+            location.href = `${apiPath}/fs/res?action=download&path=`
                 + encodeURIComponent(this.getPagePath() + fileName);
         },
         uploadFile() {
@@ -172,8 +172,10 @@ const vm = createApp({
                     return `<img class="preview" 
                     src="${apiPath}/fs/res?path=${encodeURIComponent(filepath)}">`;
                 case FS_TYPE.VIDEO:
-                    return `<video class="preview" 
-                    src="${apiPath}/fs/res?path=${encodeURIComponent(filepath)}"></video>`;
+                    return `<img class="preview"
+                    src="${apiPath}/fs/videoPic?path=${encodeURIComponent(filepath)}">`;
+//                    return `<video class="preview"
+//                    src="${apiPath}/fs/res?action=preview&path=${encodeURIComponent(filepath)}"></video>`;
                 default: return "-";
             }
         },

@@ -59,7 +59,7 @@ public class FileSystemController {
     // return int can error
     @GetMapping("/res")
     public void a(
-            boolean download, String path,
+            String action, String path,
             @RequestHeader(value = HttpHeaders.RANGE, required = false) String rangeHeader,
             HttpServletRequest request, HttpServletResponse response
     ) throws UnsupportedEncodingException {
@@ -71,7 +71,11 @@ public class FileSystemController {
             return;
         }
         // 获取文件长度
-        long fileLength = resPath.toFile().length(), contentLength = fileLength;
+        long fileLength = resPath.toFile().length();
+        // if ("preview".equals(action)) {
+        //     fileLength = Math.min(fileLength, 100_000_000);
+        // }
+        long contentLength = fileLength;
         // 处理Range请求
         long start = 0;
         if (null != rangeHeader && rangeHeader.startsWith("bytes=")) {
@@ -94,7 +98,7 @@ public class FileSystemController {
             response.setHeader(HttpHeaders.CONTENT_RANGE, String.format("bytes %d-%d/%d", start, end, fileLength));
         }
 
-        if (download) {
+        if ("download".equals(action)) {
             String name = URLEncoder.encode(resPath.getFileName().toString(),
                     StandardCharsets.UTF_8.name()).replace("+", " ");
             response.addHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + name);
@@ -130,14 +134,57 @@ public class FileSystemController {
     }
 
     private void responseError(HttpServletResponse response, int code, @Nullable String msg) {
-        // response.setStatus(code);
+        response.setHeader(HttpHeaders.CONTENT_TYPE, "application/json;charset=utf-8");
+        response.setStatus(code);
         if (null != msg && !msg.isEmpty()) {
             try {
-                response.sendError(code, msg);
-                // response.getWriter().write(msg);
+                // response.sendError(code, msg);
+                response.getWriter().write(new JSONObject().fluentPut("msg", msg).toJSONString());
             } catch (IOException e) {
                 log.error("response error {} {}", code, msg, e);
             }
+        }
+    }
+
+    @GetMapping("/videoPic")
+    public void videoPic(HttpServletResponse response, String path) throws IOException {
+        path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
+        Path resPath = Paths.get(path);
+        if (!Files.exists(resPath)) {
+            response.setCharacterEncoding(GlobalConstant.DEFAULT_CHARSET.toString());
+            responseError(response, HttpServletResponse.SC_NOT_FOUND, null);
+            return;
+        }
+        ProcessBuilder pb = new ProcessBuilder(
+                "ffmpeg",
+                "-ss", resPath.toFile().length() > 20000000 ? "10" : "1",        // 跳转到指定时间
+                "-i", path,    // 输入文件
+                "-frames:v", "1",   // 只截取1帧
+                "-f", "image2pipe", // 输出到管道
+                "-c:v", "mjpeg",    // 使用 MJPEG 编码
+                "-q:v", "16",       // 质量（2-31，越小越好）
+                "-"
+        );
+        // pb.redirectErrorStream(true);  // 合并错误流和输出流
+        response.addHeader(HttpHeaders.CONTENT_TYPE, "image/jpeg");
+        ServletOutputStream sos = null;
+        InputStream is = null;
+        int exitCode = 0;;
+        Process process;
+        try {
+            process = pb.start();
+            // 读取 stdout 数据到字节数组
+            long l = IOUtils.transferTo(is = process.getInputStream(), sos = response.getOutputStream());
+            sos.flush();
+            // 等待 FFmpeg 结束
+            exitCode = process.waitFor();
+        } catch (IOException e) {
+            log.error("video cap error", e);
+            responseError(response, 500, e.getMessage());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            IOUtils.close(is, sos);
         }
     }
 
