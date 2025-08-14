@@ -22,3 +22,6 @@ logging:
     root: info
   file:
     path: /tmp/local-utils-bs/logs
+pro:
+#  rang api max size(kb)
+  max-range: 1000

@@ -6,6 +6,7 @@ import liuyao.utils.Stringutils;
 import liuyao.utils.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,9 @@ import java.util.*;
 @RestController
 @RequestMapping("/fs")
 public class FileSystemController {
+
+    @Value("${pro.max-range:1000}")
+    int maxRange;
 
     @Autowired
     private NonStaticResourceHttpRequestHandler nonStaticResourceHttpRequestHandler;
@@ -74,7 +78,7 @@ public class FileSystemController {
         String rangeHeader = request.getHeader(HttpHeaders.RANGE);
         long start = 0;
         if (null != rangeHeader && rangeHeader.startsWith("bytes=")) {
-            long end = fileLength - 1;
+            long end;
             String[] ranges = rangeHeader.substring(6).split("-");
             if (!Stringutils.isNum(ranges[0])) {
                 responseRangeError(response, fileLength);
@@ -86,7 +90,9 @@ public class FileSystemController {
                     responseRangeError(response, fileLength);
                     return;
                 }
-                end = Math.min(Long.parseLong(ranges[1]), end);
+                end = Math.min(Long.parseLong(ranges[1]), fileLength - 1);
+            } else {
+                end = Math.min(start + this.maxRange * 1000L, fileLength -1);
             }
             contentLength = end - start + 1;
             response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
