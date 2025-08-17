@@ -1,11 +1,12 @@
 
 const apiPath = Global.apiPath;
-const {createApp} = Vue;
-const vm = createApp({
+const vm = Vue.createApp({
     data() {
         return {
-            uploadProgress: '',
+            msg: '',
+            msgb: [],
             pagePath: [], // every ends with '/'
+            partSize: 5*1024*1024,
             files: [
                 /**
                 {
@@ -107,9 +108,34 @@ const vm = createApp({
             location.href = `${apiPath}/fs/res?action=download&path=`
                 + encodeURIComponent(this.getPagePath() + fileName);
         },
+        async uploadBatch() {
+            let files = await fileChooser(null, true), formData = new FormData(),
+                file, start, end, idx, res;
+            formData.append("dir", this.getPagePath());
+            for (let i = 0; i < files.length; i++) {
+                file = files[i];
+                formData.set("filename", file.name);
+                formData.set("id", uuid());
+                start = 0;
+                idx = 0;
+                do {
+                    end = Math.min(file.size, start + this.partSize);
+                    formData.set("isLastPart", end >= file.size);
+                    formData.set("file", file.slice(start, end));
+                    res = await fileUpload(apiPath + "/fs/uploadBigFile", formData, {
+                        progress: e => {
+                            this.msg = ((start + e.loaded) / file.size * 100 | 0) + '% ' + idx;
+                        }
+                    });
+                    this.msg = res;
+                    start += this.partSize;
+                    idx++;
+                } while (start < file.size);
+            };
+        },
         uploadFile() {
             if (this.pagePath.length < 1) {
-                this.uploadProgress = '请先进入一个目录';
+                this.msg = '请先进入一个目录';
                 return;
             }
             let that = this;
@@ -119,16 +145,16 @@ const vm = createApp({
                 formData.append("dir", that.getPagePath());
                 fileUpload(apiPath + "/fs/uploadFile", formData, {
                     progress: e => {
-                        that.uploadProgress = (e.loaded / e.total * 100 | 0) + '%';
+                        that.msg = (e.loaded / e.total * 100 | 0) + '%';
                     }
                 }).then(res => {
-                    that.uploadProgress = res;
+                    that.msg = res;
                 });
             });
         },
         uploadBigFile() {
             if (this.pagePath.length < 1) {
-                this.uploadProgress = '请先进入一个目录';
+                this.msg = '请先进入一个目录';
                 return;
             }
             let that = this;
@@ -150,17 +176,17 @@ const vm = createApp({
                 endIdx = (partIdx+1) * partSize,
                 isLast = endIdx >= file.size;
             endIdx = Math.min(file.size, endIdx);
-            console.log(startIdx, endIdx);
+            // console.log(startIdx, endIdx);
             formData.set("file", file.slice(startIdx, endIdx));
             formData.set("isLastPart", isLast);
             let that = this;
             fileUpload(apiPath + "/fs/uploadBigFile", formData, {
                 progress: e => {
-                    that.uploadProgress = `${partIdx + 1}/${partCount} : ${(e.loaded / e.total * 100 | 0)}%`;
+                    that.msg = `${file.name}: ${partIdx + 1}/${partCount}  ${(e.loaded / e.total * 100 | 0)}%`;
                 }
             }).then(res => {
                 if (isLast) {
-                    that.uploadProgress = res
+                    that.msg = res
                 } else {
                     that.uploadPart(file, formData, partSize, partCount, partIdx+1);
                 };

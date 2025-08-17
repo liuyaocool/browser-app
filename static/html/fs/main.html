@@ -19,9 +19,10 @@
                     <span v-if="i>0"> >> </span>
                     <span class="folder" @click="gotoPagePath(i)">{{row}}</span>
                 </span>
-                <button class="upload" @click="uploadFile()">上传</button>
-                <button class="upload" @click="uploadBigFile()">大文件分片上传</button>
-                <span>{{uploadProgress}}</span>
+                <!-- <button class="upload" @click="uploadFile()">上传</button> -->
+                <button class="upload" @click="uploadBigFile()">上传</button>
+                <button class="upload" @click="uploadBatch()">批量上传</button>
+                <span>{{msg}}</span>
             </td></tr>
             <tr class="th-bg">
                 <td>名称</td>
@@ -46,6 +47,10 @@
                 </td>
             </tr>
         </tbody>
+    </table>
+
+    <table v-show="msgb.length > 0">
+        <tr v-for="(row, i) in msgb"><td v-html="row"></td></tr>
     </table>
 </div>
 
