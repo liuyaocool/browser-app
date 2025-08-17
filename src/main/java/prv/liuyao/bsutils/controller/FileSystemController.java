@@ -296,16 +296,15 @@ public class FileSystemController {
         InputStream is = null;
         try {
             if (null == ch) {
-                File file1 = new File(createFilePath(dir, filename));
-                if (!file1.exists()) file1.createNewFile();
+                File file1 = createFile(dir, filename);
                 Cache.set(id, ch = FileChannel.open(file1.toPath(), StandardOpenOption.WRITE));
             }
             is = file.getInputStream();
             long len = IOUtils.transferTo(is, ch);
-            return "upload " + filename + " success";
+            return "success";
         } catch (IOException e) {
-            e.printStackTrace();
-            return "upload " + filename + " fail: " + e.getMessage();
+            log.error("upload big file error", e);
+            return "fail: " + e.getMessage();
         } finally {
             IOUtils.close(is);
             if (isLastPart) {
@@ -313,6 +312,33 @@ public class FileSystemController {
                 Cache.invalidCache(id);
             }
         }
+    }
+
+    public synchronized File createFile(String dir, String fileName) throws IOException {
+        File folder = new File(dir);
+        if(!folder.exists()) {
+            folder.mkdir();
+        }
+        File[] files = folder.listFiles();
+        String fileNameOnly = fileName.substring(0, fileName.lastIndexOf('.'));
+        String suffix = fileName.substring(fileNameOnly.length() + 1);
+
+        HashSet<String> names = new HashSet<>();
+        for (File file : files) {
+            if (file.getName().startsWith(fileNameOnly)) {
+                names.add(file.getName());
+            }
+        }
+        while (names.contains(fileName)) {
+            fileName = String.format("%s.%s.%s", fileNameOnly, System.currentTimeMillis(), suffix);
+        }
+        File file = new File(new StringBuilder(dir.length() + fileName.length() + 1)
+                .append(dir)
+                .append((dir.endsWith("/") || dir.endsWith(File.separator)) ? "" : File.separator)
+                .append(fileName)
+                .toString());
+        boolean newFile = file.createNewFile();
+        return file;
     }
 
     public String createFilePath(String dir, String fileName) {

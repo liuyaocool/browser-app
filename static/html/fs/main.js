@@ -4,7 +4,7 @@ const vm = Vue.createApp({
     data() {
         return {
             msg: '',
-            msgb: [],
+            msgList: [],
             pagePath: [], // every ends with '/'
             partSize: 5*1024*1024,
             files: [
@@ -105,13 +105,14 @@ const vm = Vue.createApp({
             }
         },
         downloadFile(fileName) {
-            location.href = `${apiPath}/fs/res?action=download&path=`
+            location.href = `${apiPath}/fs/download?action=download&path=`
                 + encodeURIComponent(this.getPagePath() + fileName);
         },
         async uploadBatch() {
             let files = await fileChooser(null, true), formData = new FormData(),
                 file, start, end, idx, res;
             formData.append("dir", this.getPagePath());
+            outfor:
             for (let i = 0; i < files.length; i++) {
                 file = files[i];
                 formData.set("filename", file.name);
@@ -124,13 +125,17 @@ const vm = Vue.createApp({
                     formData.set("file", file.slice(start, end));
                     res = await fileUpload(apiPath + "/fs/uploadBigFile", formData, {
                         progress: e => {
-                            this.msg = ((start + e.loaded) / file.size * 100 | 0) + '% ' + idx;
+                            this.msgList[i] = `${file.name} <mrun>${(start + e.loaded) / file.size * 100 | 0}%</mrun>`;
                         }
                     });
-                    this.msg = res;
+                    if('success' != res) {
+                        this.msgList[i] = `${file.name} <mer>${res}</mer>`;
+                        continue outfor;
+                    }
                     start += this.partSize;
                     idx++;
                 } while (start < file.size);
+                this.msgList[i] = `${file.name} <mok>success</mok>`;
             };
         },
         uploadFile() {

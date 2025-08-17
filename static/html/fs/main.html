@@ -7,10 +7,11 @@
     <meta name="viewport" content="initial-scale=0.4">
     <title>FILE SYSTEM</title>
     <link rel="stylesheet" href="../../css/theme.css"/>
+    <link rel="stylesheet" href="../../css/font.css"/>
 </head>
 <body>
 <div id="app">
-    <table>
+    <table id="main">
         <!-- 添加这个dom 解决首行跨列导致的宽度失效 -->
         <colgroup><col><col><col><col><col></colgroup>
         <thead class="fix-th">
@@ -49,9 +50,11 @@
         </tbody>
     </table>
 
-    <table v-show="msgb.length > 0">
-        <tr v-for="(row, i) in msgb"><td v-html="row"></td></tr>
-    </table>
+    <div class="msgBox" v-show="msgList.length > 0">
+        <div class="close" @click="msgList=[]">x</div>
+        <div class="msgBoxLine" v-for="(row, i) in msgList"><span v-html="row"></span></div>
+    </div>
+
 </div>
 
 </body>

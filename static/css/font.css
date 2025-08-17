@@ -25,3 +25,8 @@
     src: url('../font/汉仪乐喵体W.ttf') format('truetype');
     unicode-range: U+2000-206F, U+20A0-20CF; /* 常见符号的Unicode范围 */
 }
+
+@font-face {
+    font-family: "RainbowParty";
+    src: url('../font/RainbowParty.ttf') format('truetype');
+}

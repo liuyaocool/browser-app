@@ -25,37 +25,37 @@
     border-width: 4px;
 }
 
-td {
+#main td {
     white-space: nowrap;
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-colgroup > col:nth-child(1) {width: 100%;}
-colgroup > col:nth-child(2) {width: var(--preview-width);}
-colgroup > col:nth-child(3) {width: 80px;}
-colgroup > col:nth-child(4) {width: 166px;}
-colgroup > col:nth-child(5) {width: 66px;}
+#main colgroup > col:nth-child(1) {width: 100%;}
+#main colgroup > col:nth-child(2) {width: var(--preview-width);}
+#main colgroup > col:nth-child(3) {width: 80px;}
+#main colgroup > col:nth-child(4) {width: 166px;}
+#main colgroup > col:nth-child(5) {width: 66px;}
 
 .th-bg {
     background-color: #808080e0;
 }
 
-thead td {
+#main thead td {
     background: #5b585847;
     backdrop-filter: blur(88px);
 }
 
-tbody tr:hover, thead tr:nth-of-type(3):hover {
+#main tbody tr:hover, #main thead tr:nth-of-type(3):hover {
     background-color: #04fb0436;
 }
-table {
+#main {
     /* 超出宽度自动隐藏 */
     table-layout: fixed;
     width: 100%;
 }
-table td:nth-of-type(1) {text-align: left; padding-left: 5px;}
+#main td:nth-of-type(1) {text-align: left; padding-left: 5px;}
 
 .preview {
     max-height: calc(var(--preview-width) * 2);
@@ -66,4 +66,53 @@ table td:nth-of-type(1) {text-align: left; padding-left: 5px;}
     position: sticky;
     top: 0;
     z-index: 10;
+}
+
+.msgBox {
+    background-color: #6d777599;
+    backdrop-filter: blur(6px);
+    border-radius: 5px;
+    position: fixed;
+    z-index: 999;
+    top: 5%;
+    left: 0;
+    right: 0;
+    margin: auto;
+    max-width: 90%;
+    padding: 23px 20px 10px 20px;
+    width: fit-content;
+    box-sizing: border-box;
+}
+
+.msgBoxLine {
+    margin: 8px 0 0 0;
+}
+
+mok {
+    color: lime;
+}
+mer {
+    color: #f7ae00;
+}
+mrun {
+    color: #0fffd7;
+}
+
+.close {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: green;
+    border-radius: 5px;
+    line-height: 15px;
+    text-align: center;
+    cursor: pointer;
+    font-family: RainbowParty;
+    font-size: 26px;
+}
+
+.close:hover {
+    background-color: #b97900;
 }
