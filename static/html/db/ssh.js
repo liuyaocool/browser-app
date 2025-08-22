@@ -985,18 +985,17 @@ function cacheExport() {
     downText(b, `cache-${new Date().getTime()}.json`);
 }
 
-function cacheImport() {
-    fileGetText(content => {
+async function cacheImport() {
+    let content = await fileGetText()
         try {
             let a = JSON.parse(content);
             for (const key in a) {
-                localStorage[key] = a[key];
+                localStorage[key] = JSON.stringify(a[key]);
             }
             alert("导入完成");
         } catch (e) {
             alert(e);
         }
-    });
 }
 
 function cacheClear(auto) {
