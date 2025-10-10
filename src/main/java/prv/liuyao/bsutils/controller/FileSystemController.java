@@ -134,6 +134,7 @@ public class FileSystemController {
     }
 
     private void responseError(HttpServletResponse response, int code, @Nullable String msg) {
+        response.setCharacterEncoding(GlobalConstant.DEFAULT_CHARSET.toString());
         response.setHeader(HttpHeaders.CONTENT_TYPE, "application/json;charset=utf-8");
         response.setStatus(code);
         if (null != msg && !msg.isEmpty()) {
@@ -147,6 +148,46 @@ public class FileSystemController {
     }
 
     @GetMapping("/videoPic")
+    public void a(HttpServletResponse response, String path) throws Exception {
+        path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
+        Path resPath = Paths.get(path);
+        if (!Files.exists(resPath)) {
+            responseError(response, HttpServletResponse.SC_NOT_FOUND, null);
+            return;
+        }
+        int idx = path.lastIndexOf('/');
+        String preview = path.substring(0, idx) + "/.vpr";
+        Files.createDirectories(Paths.get(preview));
+        preview = String.format("%s%s.jpg", preview, path.substring(idx));
+        Path previewPath = Paths.get(preview);
+        if (!Files.exists(previewPath)) {
+            new ProcessBuilder(
+                    "ffmpeg",
+                    "-y",
+                    // 跳转到指定时间
+                    "-ss", Files.size(resPath) > 500_000_000 ? "36" : "1",
+                    "-i", path,
+                    "-frames:v", "1",   // 只截取1帧
+                    "-c:v", "mjpeg",    // 使用 MJPEG 编码
+                    "-q:v", "16",       // 质量（2-31，越小越好）
+                    preview
+            ).start().waitFor();
+        }
+        response.addHeader(HttpHeaders.CONTENT_TYPE, "image/jpeg");
+        ServletOutputStream sos = null;
+        try (FileChannel ch = FileChannel.open(previewPath, StandardOpenOption.READ)) {
+            // 容器自动关闭: response.getOutputStream
+            long l = IOUtils.transferTo(ch, response.getOutputStream());
+            // 最终 flush() 确保所有数据发送
+            // sos.flush(); // or 立即刷新，让客户端看到实时进度
+            // error
+        } catch (IOException e) {
+            log.error("video cap error", e);
+            responseError(response, 500, e.getMessage());
+        }
+    }
+
+    @GetMapping("/videoPic2")
     public void videoPic(HttpServletResponse response, String path) throws IOException {
         path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
         Path resPath = Paths.get(path);
