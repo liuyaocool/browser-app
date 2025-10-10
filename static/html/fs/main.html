@@ -16,9 +16,8 @@
         <colgroup><col><col><col><col><col></colgroup>
         <thead class="fix-th">
             <tr><td colspan="5" style="white-space: normal;">
-                <span v-for="(row, i) in pagePath">
-                    <span v-if="i>0"> >> </span>
-                    <span class="folder" @click="gotoPagePath(i)">{{row}}</span>
+                <span v-for="(row, i) in pagePath" class="folder path" @click="gotoPagePath(i)">
+                    {{row}}
                 </span>
                 <!-- <button class="upload" @click="uploadFile()">上传</button> -->
                 <button class="upload" @click="uploadBigFile()">上传</button>
@@ -26,7 +25,11 @@
                 <span>{{msg}}</span>
             </td></tr>
             <tr class="th-bg">
-                <td>名称</td>
+                <td>名称
+                    <span @click="toggleShowHidden" class="name-btn"
+                        :class="showHidden ? 'name-btn-sel' : ''"
+                    >显隐</span>
+                </td>
                 <td>预览</td>
                 <td>大小</td>
                 <td>修改时间</td>
@@ -35,7 +38,7 @@
             <tr><td class="folder" @click="folderLeave()" colspan="5">..</td></tr>
         </thead>
         <tbody>
-            <tr v-for="(row, i) in files">
+            <tr v-for="(row, i) in files" v-show="row.name[0] != '.' || showHidden">
                 <td :title="row.name" :class="row.type=='folder' ? 'folder' : 'file'" 
                     @click="clickName(row)">{{row.name}}</td>
                 <td v-html="row.preview"></td>

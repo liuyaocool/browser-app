@@ -5,6 +5,7 @@ const vm = Vue.createApp({
         return {
             msg: '',
             msgList: [],
+            showHidden: 'true' === localStorage.getItem('showHidden'),
             pagePath: [], // every ends with '/'
             partSize: 5*1024*1024,
             files: [
@@ -64,6 +65,11 @@ const vm = Vue.createApp({
         },
         toTop() {
             // document.getElementById('tbody-div').scrollTop = 0;
+        },
+        toggleShowHidden() {
+            this.showHidden = !this.showHidden;
+            console.log(this.showHidden);
+            localStorage.setItem('showHidden', this.showHidden);
         },
         folderEnter(folderName) {
             // 第一层路径
