@@ -133,45 +133,72 @@ public class FileSystemController {
                 "Invalid parameter: Range");
     }
 
-    private void responseError(HttpServletResponse response, int code, @Nullable String msg) {
+    private void responseError(HttpServletResponse response, int code, @Nullable String msgFormat, Object... args) {
+        if (null != msgFormat) {
+            msgFormat = String.format(msgFormat, args);
+        }
         response.setCharacterEncoding(GlobalConstant.DEFAULT_CHARSET.toString());
         response.setHeader(HttpHeaders.CONTENT_TYPE, "application/json;charset=utf-8");
         response.setStatus(code);
-        if (null != msg && !msg.isEmpty()) {
+        if (null != msgFormat && !msgFormat.isEmpty()) {
             try {
                 // response.sendError(code, msg);
-                response.getWriter().write(new JSONObject().fluentPut("msg", msg).toJSONString());
+                response.getWriter().write(new JSONObject().fluentPut("msg", msgFormat).toJSONString());
             } catch (IOException e) {
-                log.error("response error {} {}", code, msg, e);
+                log.error("response error {} {}", code, msgFormat, e);
             }
         }
     }
 
     @GetMapping("/videoPic")
-    public void a(HttpServletResponse response, String path) throws Exception {
-        path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
+    public void a(HttpServletResponse response, String path) {
+        try {
+            path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {}
         Path resPath = Paths.get(path);
         if (!Files.exists(resPath)) {
-            responseError(response, HttpServletResponse.SC_NOT_FOUND, null);
+            responseError(response, 404, "file <%s> not exist", path);
             return;
         }
         int idx = path.lastIndexOf('/');
         String preview = path.substring(0, idx) + "/.vpr";
-        Files.createDirectories(Paths.get(preview));
+        try {
+            Files.createDirectories(Paths.get(preview));
+        } catch (IOException e) {
+            responseError(response, 500, "create folder <%s> error: %s", preview, e.getMessage());
+            return;
+        }
         preview = String.format("%s%s.jpg", preview, path.substring(idx));
         Path previewPath = Paths.get(preview);
         if (!Files.exists(previewPath)) {
-            new ProcessBuilder(
-                    "ffmpeg",
-                    "-y",
-                    // 跳转到指定时间
-                    "-ss", Files.size(resPath) > 500_000_000 ? "36" : "1",
-                    "-i", path,
-                    "-frames:v", "1",   // 只截取1帧
-                    "-c:v", "mjpeg",    // 使用 MJPEG 编码
-                    "-q:v", "16",       // 质量（2-31，越小越好）
-                    preview
-            ).start().waitFor();
+            ProcessBuilder pb = new ProcessBuilder("ffprobe", "-v", "error", "-show_entries",
+                    "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path);
+            try {
+                String capSec = Files.size(resPath) > 500_000_000 ? "36" : "1";
+                Process p = pb.start();
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                    String l = r.readLine();
+                    if (!Stringutils.isBlank(l) && !l.trim().equals("N/A")) {
+                        double sec = Double.parseDouble(l.trim());
+                        capSec = sec < 36 ? ((int)(sec / 2) + "") : "36";
+                    }
+                }
+                new ProcessBuilder(
+                        "ffmpeg", "-y", "-i", path,
+                        "-ss", capSec,      // 跳转到指定时间
+                        "-frames:v", "1",   // 只截取1帧
+                        "-c:v", "mjpeg",    // 使用 MJPEG 编码
+                        "-q:v", "16",       // 质量（2-31，越小越好）
+                        preview
+                ).start().waitFor();
+                p.waitFor();
+            } catch (InterruptedException e) {
+                responseError(response, 500, "Capture Interrupted: %s", e.getMessage());
+                return;
+            } catch (IOException e) {
+                responseError(response, 500, "Capture IO Error: %s", e.getMessage());
+                return;
+            }
         }
         response.addHeader(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         ServletOutputStream sos = null;
@@ -180,7 +207,6 @@ public class FileSystemController {
             long l = IOUtils.transferTo(ch, response.getOutputStream());
             // 最终 flush() 确保所有数据发送
             // sos.flush(); // or 立即刷新，让客户端看到实时进度
-            // error
         } catch (IOException e) {
             log.error("video cap error", e);
             responseError(response, 500, e.getMessage());
