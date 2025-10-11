@@ -1,5 +1,21 @@
 
 const apiPath = Global.apiPath;
+const FS_TYPE = {
+    FOLDER: 'folder',
+    IMAGE: 'image',
+    VIDEO: 'video',
+    TEXT: 'text',
+    PDF: 'pdf',
+    ZIP: 'zip',
+    DOC: 'doc',
+    EXCEL: 'excel',
+    PPT: 'ppt',
+};
+const FS_OPEN = {};
+FS_OPEN[FS_TYPE.IMAGE] = 'img.html';
+FS_OPEN[FS_TYPE.TEXT] = 'text.html';
+FS_OPEN[FS_TYPE.VIDEO] = 'video.html';
+
 const vm = Vue.createApp({
     data() {
         return {
@@ -101,14 +117,10 @@ const vm = Vue.createApp({
             let a;
             if (!(a = row.type))
                 return alert("暂不支持当前格式.");
-            switch(a) {
-                case FS_TYPE.VIDEO:
-                    window.open(`video.html#${apiPath}/fs/res?path=${encodeURIComponent(row.path)}`);
-                    break;
-                default:
-                    window.open(`openfile.html?${a}#${row.path}`);
-                    break;
-            }
+            window.open(`${FS_OPEN[a]}#${row.path}`);
+        },
+        openText(row) {
+            window.open(`${FS_OPEN[FS_TYPE.TEXT]}#${row.path}`);
         },
         downloadFile(fileName) {
             location.href = `${apiPath}/fs/download?action=download&path=`
@@ -218,3 +230,41 @@ const vm = Vue.createApp({
         },
     },
 }).mount("#app");
+
+function fsMimeType(suffix) {
+    switch (suffix || '') {
+        case 'webp':
+        case 'png':
+        case 'jpeg':
+        case 'jpg':
+        case 'svg':
+        case 'gif': return FS_TYPE.IMAGE;
+        case 'webm':
+        case 'mp4': return FS_TYPE.VIDEO;
+        case 'txt':
+        case 'md':
+        case 'properties':
+        case 'conf':
+        case 'xml':
+        case 'desktop':
+        case 'log': return FS_TYPE.TEXT;
+        default: return '';
+    }
+}
+
+function getFileSuffix(nameOrPath) {
+    // 从后往前数第几个
+    let backNoTypeMap = {2: ['tar']};
+    let split = nameOrPath.split('.');
+    if (split.length < 2) {
+        return '-';
+    }
+    for (const len in backNoTypeMap) {
+        for (let i = 0; i < backNoTypeMap[len].length; i++) {
+            if (split[split.length - len] == backNoTypeMap[len][i]) {
+                return split.slice(split.length-len).join('.');
+            }
+        }
+    }
+    return split[split.length-1];
+}

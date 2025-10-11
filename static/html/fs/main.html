@@ -47,6 +47,7 @@
                 <td>{{row.time}}</td>
                 <td v-if="row.type=='folder'">-</td>
                 <td v-else>
+                    <span class="funcBtn" @click="openText(row)">文本</span>
                     <span class="funcBtn" @click="downloadFile(row.name)">下载</span>
                 </td>
             </tr>
@@ -66,7 +67,6 @@
 <script>includeCss('main.css?v=1.7', 'main-phone.css?v=1.8')</script>
 <script src="../../js/config.js"></script>
 <script src="../../js/vue3.global.js"></script>
-<script src="base.js?v=1"></script>
 <script src="main.js?v=1.2"></script>
 
 <!--<script src="https://resource.liuyao.link/js/effect/mouseGerm.js"></script>-->

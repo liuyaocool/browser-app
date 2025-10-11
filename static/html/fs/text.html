@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OPEN FILE</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse; /* 边框合并以显示为单个边框 */
+        }
+        .text_no {
+            padding: 0 10px;
+            vertical-align: middle;
+            text-align: right;
+            color: gray;
+        }
+        .text_auto_wrap {
+            white-space: normal; /* 允许文本自动换行 */
+            word-wrap: break-word; /* 在单词边界自动换行 */
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+</body>
+<script src="../../js/config.js"></script>
+<script>
+    const filePath = location.hash.substring(1);
+    let readPos = 0, reading = false, readPre = '', readLineNo = 1;
+    document.title = decodeURIComponent(filePath.substr(filePath.lastIndexOf('/') + 1));
+
+    document.body.innerHTML = `<table><tbody id="text"></tbody></table>`;
+    nextText(-1);
+    window.addEventListener("scroll", e => {if (canGetText()) nextText(2);});
+
+    /**
+     * 获得文本
+     * @param autoNextLen 自动获得次数
+     *      <0: 自动获得, 直到超出屏幕底部停止
+     *      >0: 自动获得次数, 跟超出屏幕无关
+     */
+    function nextText(autoNextLen) {
+        if (readPos == -1) return;
+        reading = true;
+        fetch(`${Global.apiPath}/fs/textGet?position=${readPos}&size=2048&path=${encodeURIComponent(filePath)}`)
+        .then(res => res.text())
+        .then(res => {
+                res = JSON.parse(res);
+                let ele = '', lines = (readPre + res.data).split('\n');
+                readPre = res.data.endsWith('\n') ? '' : lines.pop();
+                if (true === res.last) {
+                    readPos = -1;
+                    lines.push('', '<hr>', '到底了...');
+                } else {
+                    readPos = res.position;
+                }
+                lines.forEach(line => {
+                    let dom = document.createElement('tr');
+                    // dom.innerHTML = ;
+                    ele += `<tr>
+                        <td class="text_no">${res.code != 200 ? `-${res.code}` : readLineNo++}</td>
+                        <td class="text_auto_wrap">${line}</td>
+                        </tr>`;
+                });
+                document.getElementById('text').innerHTML += ele;
+                reading = false;
+                console.log(autoNextLen)
+                if ((canGetText() && autoNextLen < 0) || autoNextLen > 0) nextText(--autoNextLen);
+        })
+    }
+
+    function canGetText() {
+        // 当滚动到底部时，加载更多内容： 获取滚动条的位置+获取窗口的高度>=获取文档的总高度
+        return readPos !== -1 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight;
+    }
+</script>
+</html>

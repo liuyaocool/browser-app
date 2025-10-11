@@ -40,7 +40,7 @@
 #main colgroup > col:nth-child(2) {width: var(--preview-width);}
 #main colgroup > col:nth-child(3) {width: 80px;}
 #main colgroup > col:nth-child(4) {width: 166px;}
-#main colgroup > col:nth-child(5) {width: 66px;}
+#main colgroup > col:nth-child(5) {width: 86px;}
 
 .th-bg {
     background-color: #808080e0;
@@ -83,6 +83,10 @@
     position: sticky;
     top: 0;
     z-index: 10;
+}
+
+.funcBtn:not(:last-child) {
+    margin-right: 3px;
 }
 
 .msgBox {

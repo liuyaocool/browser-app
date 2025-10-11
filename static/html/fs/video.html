@@ -63,6 +63,7 @@
 
 </div></body>
 
+<script src="../../js/config.js"></script>
 <script src="../../js/util.js"></script>
 <script src="../../js/vue3.global.js"></script>
 
@@ -79,14 +80,15 @@
      */
 
     const filePath = location.hash.substring(1)
-        ,startP = [] // 鼠标/手指 开始的点
-        ,fingerPx = 600 // 一个大拇哥的像素点 PC(27寸):300 平板(11.5寸):260 手机(6.7寸):600 
+        // ,fingerPx = 600 // ?? 一个大拇哥的像素点 PC(27寸):300 平板(11.5寸):260 手机(6.7寸):600 
         ,speed = [1.25, 1.5, 2, 2.5, 3] // 倍速
         ,eventPx = 10 // 滑动多少px触发事件
         ;
+    document.title = filePath.substr(filePath.lastIndexOf('/') + 1);
     let startTime = 0
         ,startTimeout = null
         ,startSecond = '' // 操作时视频当前播放进度 s
+        ,startP = [] // 鼠标/手指 开始的点
         // 简单测试 从左滑倒右是15分钟左右
         // videoDom.duration: 视频时长
         // 快进秒数 = 滑动像素数 x progressPerPxRatio
@@ -96,7 +98,7 @@
     const vm = Vue.createApp({
         data() {
             return {
-                source: [filePath],
+                source: [`${Global.apiPath}/fs/res?path=${encodeURIComponent(filePath)}`],
                 timeCur: '',
                 timeTotal: '',
                 speedList: speed,
@@ -123,9 +125,6 @@
     });
 
     (async function init() {
-        let fileName = decodeURIComponent(filePath);
-        document.title = fileName.substr(fileName.lastIndexOf('/') + 1);
-
         // let filePathPre = filePath.slice(0, filePath.lastIndexOf('.') + 1)
         // let captionsSuffix = ['srt', 'vtt', ] // 'ssa', 'ass'
         // let text = await fetchTextFile(filePathPre+'srt');
