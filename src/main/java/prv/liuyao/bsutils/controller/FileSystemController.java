@@ -38,7 +38,6 @@ public class FileSystemController {
     private NonStaticResourceHttpRequestHandler nonStaticResourceHttpRequestHandler;
 
     @PostMapping("/getFolderChilds")
-    @ResponseBody
     public String[] getFolderChilds(@RequestBody(required = false) String folderPath) {
         File[] files = !StringUtils.hasText(folderPath)
                 ? File.listRoots() : new File(folderPath).listFiles();
