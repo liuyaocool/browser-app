@@ -4,74 +4,129 @@
     <meta charset="UTF-8">
     <title>OPEN FILE</title>
     <style>
-        table {
-            width: 100%;
-            border-collapse: collapse; /* 边框合并以显示为单个边框 */
+        body, html {
+            background-color: #181a1b;
+            color: white;
+            font-size: 16px;
+            margin-left: 8px;
         }
-        .text_no {
-            padding: 0 10px;
-            vertical-align: middle;
-            text-align: right;
+        li::marker {
             color: gray;
         }
-        .text_auto_wrap {
-            white-space: normal; /* 允许文本自动换行 */
+        li {
+            white-space: pre-wrap; /* 允许文本自动换行 */
             word-wrap: break-word; /* 在单词边界自动换行 */
             word-break: break-all;
+        }
+        select {
+            position: fixed;
+            right: 5px;
+            top: 5px;
+            opacity: 0.5;
+            background: none;
+            color: white;
+            border: none;
         }
     </style>
 </head>
 <body>
-</body>
+<select id="encodeSel">
+    <option value="UTF-8">UTF-8</option>
+    <option value="GBK">GBK</option>
+    <option value="GB2312">GB2312</option>
+    <option value="ISO-8859-1">ISO-8859-1</option>
+</select>
+<pre><ol id="textOl"></ol></pre>
 <script src="../../js/config.js"></script>
+<script src="../../js/util.js"></script>
 <script>
+    const pageSize = 4096, codeLF = '\n'.charCodeAt(0);
+    if (isMobile()) {
+        document.body.style.fontSize = '3vw';
+        document.body.style.marginLeft = '3vw';
+        encodeSel.style.fontSize = '5vw';
+    }
     const filePath = location.hash.substring(1);
-    let readPos = 0, reading = false, readPre = '', readLineNo = 1;
+    encodeSel.value = localStorage.getItem('encode_' + filePath) || 'UTF-8';
+    const decoder = new TextDecoder(encodeSel.value);
+    let readPos = 0
+        ,ended = false
+        ,prevLast = [] // 上页 不完整 最后一行 Uint8Array
+        ;
     document.title = decodeURIComponent(filePath.substr(filePath.lastIndexOf('/') + 1));
 
-    document.body.innerHTML = `<table><tbody id="text"></tbody></table>`;
-    nextText(-1);
-    window.addEventListener("scroll", e => {if (canGetText()) nextText(2);});
+    init();
+    window.addEventListener("scroll", e => {if (canGetText()) nextText();});
+    encodeSel.addEventListener('change', e => {
+        localStorage.setItem('encode_' + filePath, e.target.value);
+        location.reload();
+    });
 
-    /**
-     * 获得文本
-     * @param autoNextLen 自动获得次数
-     *      <0: 自动获得, 直到超出屏幕底部停止
-     *      >0: 自动获得次数, 跟超出屏幕无关
-     */
-    function nextText(autoNextLen) {
-        if (readPos == -1) return;
-        reading = true;
-        fetch(`${Global.apiPath}/fs/textGet?position=${readPos}&size=2048&path=${encodeURIComponent(filePath)}`)
-        .then(res => res.text())
-        .then(res => {
-                res = JSON.parse(res);
-                let ele = '', lines = (readPre + res.data).split('\n');
-                readPre = res.data.endsWith('\n') ? '' : lines.pop();
-                if (true === res.last) {
-                    readPos = -1;
-                    lines.push('', '<hr>', '到底了...');
-                } else {
-                    readPos = res.position;
-                }
-                lines.forEach(line => {
-                    let dom = document.createElement('tr');
-                    // dom.innerHTML = ;
-                    ele += `<tr>
-                        <td class="text_no">${res.code != 200 ? `-${res.code}` : readLineNo++}</td>
-                        <td class="text_auto_wrap">${line}</td>
-                        </tr>`;
-                });
-                document.getElementById('text').innerHTML += ele;
-                reading = false;
-                console.log(autoNextLen)
-                if ((canGetText() && autoNextLen < 0) || autoNextLen > 0) nextText(--autoNextLen);
-        })
+    async function init() {
+        while(canGetText()) {
+            await nextText();
+        }
+    }
+
+    async function nextText() {
+        const resp = await fetch(
+            `${Global.apiPath}/fs/res?path=${encodeURIComponent(filePath)}`,
+            { headers: {"Range": `bytes=${readPos}-${readPos + pageSize - 1}`} });
+        readPos += pageSize;
+        const buf = await resp.arrayBuffer();
+        if (0 == buf.byteLength) {
+            ended = true;
+            return;
+        }
+        const bytes = new Uint8Array(buf);
+        const firstLFIdx = bytes.indexOf(codeLF); // -1
+        if (firstLFIdx == -1) { // 没有\n, 等下一次
+            prevLast = uint8ArrayConcat(prevLast, bytes);
+            await nextText();
+            return;
+        }
+        const lastLFIdx = bytes.lastIndexOf(codeLF);
+        // subarray 子数组 共享内存 并没有复制
+        const firstLine = uint8ArrayConcat(prevLast, bytes.subarray(0, firstLFIdx));
+        let ele = `<li>${decoder.decode(firstLine)}</li>`;;
+        let lineBytes = bytes.subarray(firstLFIdx+1, lastLFIdx);
+        // console.log('prev: ' + decoder.decode(new Uint8Array(prevLast)));
+        // console.log('this: ' + decoder.decode(new Uint8Array(bytes.subarray(0, firstLFIdx))));
+        // console.log(`${firstLFIdx} / ${lastLFIdx}`);
+        // console.log(ele);
+        // console.log(lineBytes.length);
+        // console.log('----------------')
+        if (lineBytes.length > 0) {
+            decoder.decode(lineBytes).split('\n')
+                .forEach(line => ele += `<li>${line}</li>`);
+        }
+        textOl.innerHTML += ele;
+        prevLast = bytes.subarray(lastLFIdx + 1);
     }
 
     function canGetText() {
         // 当滚动到底部时，加载更多内容： 获取滚动条的位置+获取窗口的高度>=获取文档的总高度
-        return readPos !== -1 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight;
+        return !ended && readPos !== -1 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight;
     }
+
+
+    function uint8ArrayConcat(arr1, arr2) {
+        let arr = new Uint8Array(arr1.length + arr2.length);
+        arr.set(arr1, 0);
+        arr.set(arr2, arr1.length);
+        return arr;
+    }
+
+// let strBytes = [
+//     13,10,
+//     186,171,193,162,182,250,192,239,178,187,205,163,181,216,180,171,192,180,196,171,180,243,183,242,210,187,201,249,189,211,210,187,201,249,181,196,185,254,185,254,180,243,208,166,201,249,
+//     13,10,
+//     186,171,193,162,182,250,192,239,178,187,205,163,181,216,180,171,192,180,196,171,180,243,183,242,210,187,201,249,189,211,210,187,201,249,181,196,185,254,185,254,180,243,208,166,201,249,
+//     // 13,10,
+// ];
+// let strArr = new Uint8Array(strBytes, 6);
+// console.log(decoder.decode(strArr));
+
 </script>
+</body>
 </html>
