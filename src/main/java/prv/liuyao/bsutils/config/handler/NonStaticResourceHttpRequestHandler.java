@@ -8,7 +8,7 @@ import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.file.Path;
 
-@Component
+// @Component
 public class NonStaticResourceHttpRequestHandler extends ResourceHttpRequestHandler {
 
   public final static String ATTR_FILE = "NON-STATIC-FILE";

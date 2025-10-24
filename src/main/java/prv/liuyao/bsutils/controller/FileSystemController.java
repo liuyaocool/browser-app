@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import prv.liuyao.bsutils.config.ex.ApiException;
 import prv.liuyao.bsutils.config.handler.NonStaticResourceHttpRequestHandler;
 import prv.liuyao.bsutils.global.GlobalConstant;
 import prv.liuyao.bsutils.utils.Cache;
@@ -34,7 +35,7 @@ import java.util.*;
 @RequestMapping("/fs")
 public class FileSystemController {
 
-    @Autowired
+    // @Autowired
     private NonStaticResourceHttpRequestHandler nonStaticResourceHttpRequestHandler;
 
     @PostMapping("/getFolderChilds")
@@ -150,53 +151,53 @@ public class FileSystemController {
     }
 
     @GetMapping("/videoPic")
-    public void a(HttpServletResponse response, String path) {
+    public void a(HttpServletResponse response, String path) throws IOException, InterruptedException {
         try {
             path = URLDecoder.decode(path, StandardCharsets.UTF_8.name());
         } catch (UnsupportedEncodingException e) {}
         Path resPath = Paths.get(path);
         if (!Files.exists(resPath)) {
-            responseError(response, 404, "file <%s> not exist", path);
-            return;
+            throw new ApiException(404, null, "file <%s> not exist", path);
         }
         int idx = path.lastIndexOf('/');
-        String preview = path.substring(0, idx) + "/.vpr";
-        try {
-            Files.createDirectories(Paths.get(preview));
-        } catch (IOException e) {
-            responseError(response, 500, "create folder <%s> error: %s", preview, e.getMessage());
-            return;
-        }
-        preview = String.format("%s%s.jpg", preview, path.substring(idx));
+        String previewPathStr = path.substring(0, idx) + "/.vpr";
+        String preview = String.format("%s%s.jpg", previewPathStr, path.substring(idx));
         Path previewPath = Paths.get(preview);
         if (!Files.exists(previewPath)) {
-            ProcessBuilder pb = new ProcessBuilder("ffprobe", "-v", "error", "-show_entries",
-                    "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path);
-            try {
-                String capSec = Files.size(resPath) > 500_000_000 ? "36" : "1";
-                Process p = pb.start();
-                try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                    String l = r.readLine();
-                    if (!Stringutils.isBlank(l) && !l.trim().equals("N/A")) {
-                        double sec = Double.parseDouble(l.trim());
-                        capSec = sec < 36 ? ((int)(sec / 2) + "") : "36";
+            synchronized (this) {
+                if (!Files.exists(previewPath)) {
+                    long size = Files.size(resPath);
+                    Files.createDirectories(Paths.get(previewPathStr));
+                    String capSec = size > 500_000_000 ? "36" : "1";
+                    if (size < 1_000_000_000) {
+                        ProcessBuilder pb = new ProcessBuilder("ffprobe", "-v", "error", "-show_entries",
+                                "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path);
+                        String l = null;
+                        try {
+                            Process p = pb.start();
+                            try (InputStreamReader in = new InputStreamReader(p.getInputStream());
+                                 BufferedReader r = new BufferedReader(in)) {
+                                l = r.readLine();
+                                p.waitFor();
+                            }
+                        } catch (Exception e) {
+                            log.error("get video({}) duration error", path, e);
+                        }
+                        if (!Stringutils.isBlank(l) && !l.trim().equals("N/A")) {
+                            double sec = Double.parseDouble(l.trim());
+                            capSec = sec < 36 ? ((int) (sec / 2) + "") : "36";
+                        }
                     }
+                    new ProcessBuilder(
+                            "ffmpeg", "-y",
+                            "-ss", capSec,      // 跳转到指定时间, 此选项在前 可加快截图速度
+                            "-i", path,
+                            "-frames:v", "1",   // 只截取1帧
+                            "-c:v", "mjpeg",    // 使用 MJPEG 编码
+                            "-q:v", "23",       // 质量（2-31，越小越好）
+                            preview
+                    ).start().waitFor();
                 }
-                new ProcessBuilder(
-                        "ffmpeg", "-y", "-i", path,
-                        "-ss", capSec,      // 跳转到指定时间
-                        "-frames:v", "1",   // 只截取1帧
-                        "-c:v", "mjpeg",    // 使用 MJPEG 编码
-                        "-q:v", "16",       // 质量（2-31，越小越好）
-                        preview
-                ).start().waitFor();
-                p.waitFor();
-            } catch (InterruptedException e) {
-                responseError(response, 500, "Capture Interrupted: %s", e.getMessage());
-                return;
-            } catch (IOException e) {
-                responseError(response, 500, "Capture IO Error: %s", e.getMessage());
-                return;
             }
         }
         response.addHeader(HttpHeaders.CONTENT_TYPE, "image/jpeg");
@@ -206,9 +207,6 @@ public class FileSystemController {
             long l = IOUtils.transferTo(ch, response.getOutputStream());
             // 最终 flush() 确保所有数据发送
             // sos.flush(); // or 立即刷新，让客户端看到实时进度
-        } catch (IOException e) {
-            log.error("video cap error", e);
-            responseError(response, 500, e.getMessage());
         }
     }
 
