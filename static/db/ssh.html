@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="UTF-8">
+    <title>ssh连接数据库</title>
+
+    <link rel="stylesheet" href="codemirror/core.css" />
+    <link rel="stylesheet" href="ssh.css" />
+</head>
+<body>
+<div id="app">
+    <form class="dbForm">
+        <div v-show="funcAttr.connOpen">
+            <select v-model="formdata.driver">
+                <option value="POSTGRESQL" label="postgresql"></option>
+                <option value="MYSQL" label="mysql"></option>
+            </select>
+            <input type="text" v-model="formdata.host" class="w-host" placeholder="host">
+            <input type="number" v-model="formdata.port" class="w-port" placeholder="port" max="65535" min="5001">
+            <input type="text" v-model="formdata.db" style="width: 108px;" placeholder="db">
+            <input type="text" v-model="formdata.dbuser" class="w-user" placeholder="username">
+            <input type="password" v-model="formdata.dbpwd" class="w-pwd" placeholder="password">
+            <inline>
+                <label> ssh <input type="checkbox" v-model="formdata.ssh" placeholder="ssh"></label>
+                <span v-show="formdata.ssh">
+                    <input type="text" readonly v-model="formdata.sshKey" style="width:50px;" onclick="sshFileChoose()" placeholder="ssh key">
+                    <input type="password" v-model="formdata.sshKeyPwd" class="w-pwd" placeholder="ssh key password">
+                    <input type="text" v-model="formdata.sshHost" class="w-host" placeholder="ssh host">
+                    <input type="number" v-model="formdata.sshPort" class="w-port" placeholder="ssh port">
+                    <input type="text" v-model="formdata.sshUser" class="w-user" placeholder="ssh username">
+                    <input type="password" v-model="formdata.sshUserPwd" class="w-pwd" placeholder="ssh user password">
+                </span>
+            </inline>
+            <br>
+        </div>
+        <button type="button" :style="{'background-color':funcAttr.connOpen? 'chocolate' : 'gray' }" 
+            style="user-select: all;"
+            @click="toggleConn()">{{formdata.dbuser}}@{{formdata.host}}/{{formdata.db}}</button>
+        <button type="button" class="btn1" onclick="execute('selected')">执行选中<tip v-show="funcAttr.funcKeyPress">r</tip></button>
+        <button type="button" class="btn1" onclick="stopExecute()">停止</button>
+        <button v-show="!funcAttr.isPc" type="button" class="btn1" onclick="showHistory()">DB历史({{funcAttr.funcKey}}+q)</button>
+        <button v-show="!funcAttr.isPc" type="button" class="btn1" onclick="escPress()">ESC</button>
+        <button type="button" class="btn2" onclick="execute('db')">库</button>
+        <button type="button" class="btn2" onclick="execute('table')">表</button>
+        <button type="button" class="btn2" onclick="execute('view')">视图</button>
+        <inline>
+            <input id="tableName" type="text" v-model="funcAttr.tableName" placeholder="输入表名" 
+                oninput="showTableList(this)" onblur="vm.panelReset()"
+                style="width: 260px; text-align: right">
+            <tip v-show="funcAttr.funcKeyPress" style="right:136px;">t</tip>
+            <button type="button" class="btn2" onclick="execute('column')">表结构</button>
+            <button type="button" class="btn2" onclick="execute('index')">表索引</button>
+        </inline>
+        <button type="button" class="btn3" onclick="exportTable()">导出结果</button>
+        <inline>
+            <input id="filterWordNum" style="width:42px;text-align:center;" type="number" min="1" max="999" v-model="funcAttr.filterColNo">
+            <input id="filterWord" class="input" type="text" :placeholder="'回车筛选第'+(funcAttr.filterColNo)+'列'"
+                   style="width: 118px; text-align: right;">
+            <tip style="left: 55px;" v-show="funcAttr.funcKeyPress">f</tip>
+        </inline>
+        <button type="button" class="btn3" onclick="cacheExport()">导出缓存</button>
+        <button type="button" class="btn3" onclick="cacheImport()">导入缓存</button>
+    </form>
+
+    <div class="sql_div">
+        <textarea id="sql"></textarea>
+        <tip-sql v-show="funcAttr.funcKeyPress">
+            <table>
+                <tr><td>获得焦点: </td>  <td>Esc</td></tr>
+                <tr><td>注释: </td>     <td>{{funcAttr.funcKey}} + /</td></tr>
+                <tr><td>复制: </td>     <td>{{funcAttr.funcKey}} + d</td></tr>
+                <tr><td>下一行输入: </td><td>{{funcAttr.funcKey}} + Enter</td></tr>
+                <tr><td>上一个sql: </td><td>{{funcAttr.funcKey}} + W</td></tr>
+                <tr><td>下一个sql: </td><td>{{funcAttr.funcKey}} + E</td></tr>
+            </table>
+        </tip-sql>
+        <div class="cursor-statistics">({{funcAttr.sqlPos[0]}}) {{funcAttr.curPos[0]}}/{{funcAttr.curPos[1]}}</div>
+    </div>
+    <div id="height_sql">==</div>
+    <div id="data-container" :style="tb.style">
+        <tip-data class="box" v-show="funcAttr.funcKeyPress">↑<br>← →<br>↓</tip-data>
+        <div id="data-div" style="width: 100%; height: 100%; overflow: auto hidden;">
+            <table class="thead">
+                <thead><tr><td v-for="(item, idx) in tb.head">
+                    <div :style="tb.colStyle[idx]" v-html="idx+1+':'+item"></div>
+                </td></tr></thead>
+            </table>
+            <div class="tbody-div">
+                <table><tbody>
+                <tr @contextmenu="showMenu($event, i);" v-for="(row, i) in tb.body"><td v-for="(col, j) in row">
+                    <div :style="tb.colStyle[j]" v-html="col"></div>
+                </td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+    <table class="footer"><tr>
+        <td class="tips">功能键(<span :style="{color: funcAttr.funcKeyPress ? 'red' : ''}">{{funcAttr.funcKey}}</span>) 指令(>)</td>
+        <td><div class="show-sql"> {{funcAttr.showSql.replace('\n', ' ')}} </div></td>
+        <td>
+            <input onchange="vm.changePageNo(this.value)" type="number" min="1" :max="tb.maxPage" v-model="tb.pageNo">/{{tb.maxPage}}页
+            <input type="button" value="go" onclick="vm.changePageNo(-1)">
+            每页{{tb.pageSize}} 共{{tb.data.length}}
+        </td>
+    </tr></table>
+
+    <div class="box hot-key-div" :style="panel.style" v-show="panel.show=='hot-key-div'">
+        <div v-for="(row, i) in panel.data" v-html="row[1]" class="box-item"
+             :class="(panel.selIdx==i?' selected ':' ') + row[0]"
+             @click="panelDataClick(i)" @mouseover="panel.selIdx=i"
+        ></div>
+    </div>
+    <div class="box his-div" :style="{top: panel.show=='his-div' ? '' : '-520px'}">
+        <input id="hisFilter" autocomplete="off" oninput="initHistory(this.value)" placeholder="word1 word2 ...">
+        <div v-for="(row, i) in panel.data" v-html="row[0]" class="box-item"
+             :class="panel.selIdx==i?' selected ':' '"
+             @click="panelDataClick(i)" @mouseover="panel.selIdx=i"
+        ></div>
+    </div>
+
+    <div class="box context-menu" v-show="panel.menuDataIdx >= 0" :style="panel.style">
+        <div class="box-item" @click="copyToInsertPage()">复制为insert(整页)</div>
+        <div class="box-item" @click="copyToInsert()">复制为insert</div>
+        <div class="box-item" @click="copyToUpdate()">复制为update</div>
+        <div class="box-item" @click="tableStruct()">表结构</div>
+        <div class="box-item" @click="tableIndex()">表索引</div>
+    </div>
+
+    <div class="box" :style="panel.style" v-show="panel.show=='table-list'"
+        style="position: absolute; text-align: right;">
+        <div v-for="(row, i) in panel.data" v-html="row[1]" class="box-item"
+            :class="panel.selIdx==i?' selected ':' '"
+            @click="panelDataClick(i)" @mouseover="panel.selIdx=i"
+        ></div>
+    </div>
+</div>
+
+
+<script src="config.js"></script>
+<script>let path = Global.apiPath;</script>
+<script src="util.js"></script>
+<!--vue中文文档: https://v2.cn.vuejs.org/v2/guide/installation.html-->
+<script src="vue3.global.js"></script>
+<script src="file/common.js"></script>
+<script src="file/xlsx.full.min.js"></script>
+
+<script src="codemirror/core.js"></script>
+<script src="codemirror/matchbrackets.js"></script>
+<script src="codemirror/sql.js"></script>
+
+<script src="sql_handle.js"></script>
+<script src="ssh.js"></script>
+
+
+</body>
+</html>

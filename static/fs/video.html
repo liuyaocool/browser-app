@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OPEN FILE</title>
+    <style>
+        html, body, #app {
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .btns {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            opacity: 0;
+        }
+        body:hover .btns {
+            opacity: 1;
+        }
+        .btns * {
+            font-size: 4vw;
+            border: solid 1px #c3c3c3;
+        }
+        video {
+            object-fit: contain;
+            background-color: #181a1b;
+        }
+        .time {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 7vw;
+            color: #fffdfdba;
+        }
+        .r0 {
+            width: 100%;
+            height: 100%;
+        }
+        .r90 {
+            width: 100vh;
+            height: 100vw;
+            position: fixed;
+            left: calc(100vw / 2 - 100vh / 2);
+            top: calc(100vh / 2 - 100vw / 2);
+        }
+        
+    </style>
+</head>
+<body><div id="app">
+    <video id="vdo" controls :class="videoClass" :style="{rotate: videoRotate+'deg'}">
+        <source type="video/mp4" v-for="(row, i) in source" :src="row">
+    </video>
+    <div class="btns">
+        <button type="button" onclick="loop()"
+            :style="{backgroundColor: videoLoop ? '#00ff51' : ''}">loop</button>
+        <br><button type="button" onclick="rotate()">{{videoRotate}}°</button>
+    </div>
+    <div class="time" v-show="mouseType == 'progress'">{{timeCur}}</div>
+    <span id="msg" style="color: white;position: fixed; left: 0px; top: 0px; z-index: 99;"></span>
+
+</div></body>
+
+<script src="config.js"></script>
+<script src="vue3.global.js"></script>
+
+<script>
+    /**
+     * 操作逻辑：
+     *  1. 短按<1s: click
+     *  2. 短按滑动(<1s 需滑动超过事件触发像素数): 进度 声音
+     *  3. 长按1s+: 视频加速
+     *  4. 长按滑动(1s+ 同2): 加速等级
+     *  5. 左1/3 快退5s
+     *  6. 中1/3 播放暂停
+     *  7. 右1/3 快进5s
+     */
+
+    const filePath = location.hash.substring(1)
+        // ,fingerPx = 600 // ?? 一个大拇哥的像素点 PC(27寸):300 平板(11.5寸):260 手机(6.7寸):600 
+        ,speed = [1.25, 1.5, 2, 2.5, 3] // 倍速
+        ,eventPx = 10 // 滑动多少px触发事件
+        ;
+    document.title = filePath.substr(filePath.lastIndexOf('/') + 1);
+    let startTime = 0
+        ,startTimeout = null
+        ,startSecond = '' // 操作时视频当前播放进度 s
+        ,startP = [] // 鼠标/手指 开始的点
+        // 简单测试 从左滑倒右是15分钟左右
+        // videoDom.duration: 视频时长
+        // 快进秒数 = 滑动像素数 x progressPerPxRatio
+        ,progressPerPxRatio = 1
+        // ,progressStartPx = 0 // 操作进度 事件触发时的偏移px
+        ;
+    const vm = Vue.createApp({
+        data() {
+            return {
+                source: [`${Global.apiPath}/fs/res?path=${encodeURIComponent(filePath)}`],
+                timeCur: '',
+                timeTotal: '',
+                speedList: speed,
+                speedIdx: 2,
+                mouseType: null, // progress: 进度;  voice: 音量;  speed: 速度
+                videoClass: 'r0',
+                // 视频循环
+                videoLoop: false,
+                // 视频旋转角度
+                videoRotate: 0,
+                videoWidth: '100vw',
+                videoHeight: '100vh',
+            }
+        },
+        watch: {
+            videoRotate(nv, ov) {
+                this.videoClass = nv / 90 % 2 == 1 ? 'r90' : 'r0';
+            }
+        },
+    }).mount("#app");
+    vdo.addEventListener('loadedmetadata', function(e) {
+        progressPerPxRatio = Math.min(vdo.duration/15/60, 1);
+        vm.timeTotal = formatTime(vdo.duration);
+    });
+
+    (async function init() {
+        // let filePathPre = filePath.slice(0, filePath.lastIndexOf('.') + 1)
+        // let captionsSuffix = ['srt', 'vtt', ] // 'ssa', 'ass'
+        // let text = await fetchTextFile(filePathPre+'srt');
+        // console.log(text);
+    })()
+
+    /**
+     * @param t 秒数
+     */
+    function formatTime(t) {
+        let hour = Math.floor(t / 3600);
+        let minute = Math.floor(t % 3600 / 60);
+        minute = minute < 10 ? ('0' + minute) : minute;
+        let second = Math.floor(t % 60);
+        second = second < 10 ? ('0' + second) : second;
+        if (hour > 0) {
+            return `${hour}:${minute}:${second}`;
+        }
+        return `${minute}:${second}`;
+    }
+
+    function loop() {
+        vdo.loop = vm.videoLoop = !vm.videoLoop;
+    }
+    function rotate() {
+        vm.videoRotate = (vm.videoRotate + 90)%360;
+    }
+
+    function mouseStart(p) {
+        showMsg(`start: ${p.clientX} / ${p.clientY}`);
+        // offsetX 会受内部元素影响
+        startP[0] = p.clientX;
+        startP[1] = p.clientY;
+        startTime = Date.now();
+        startSecond = vdo.currentTime;
+        startTimeout = setTimeout(() => {
+            vm.mouseType = 'speed';
+            vdo.playbackRate = vm.speedList[vm.speedIdx];
+            showMsg(`speed(${vdo.playbackRate})`);
+        }, 1000);
+    }
+
+    function mouseMove(p) {
+        if (0 == startTime)
+            return;
+        // 滑动的尺寸
+        let x = p.clientX - startP[0]
+            ,y = p.clientY - startP[1]
+            ;
+        if (!vm.mouseType) {
+            if (x > eventPx || x < -eventPx) {
+                vm.mouseType = 'progress';
+                startP[0] = p.clientX;
+            } else if(y > eventPx || y < -eventPx) {
+                vm.mouseType = 'voice';
+            } else {
+                return;
+            }
+        }
+        clearTimeout(startTimeout);
+        switch(vm.mouseType) {
+            case 'progress':
+                vdo.currentTime = startSecond + (x * progressPerPxRatio).toFixed()*1;
+                vm.timeCur = formatTime(vdo.currentTime);
+                break;
+            case 'speed':
+
+                break;
+        }
+    }
+
+    function mouseEnd(e) {
+        if (0 == startTime)
+            return;
+        clearTimeout(startTimeout);
+        switch(vm.mouseType) {
+            case 'progress':
+                break;
+            case 'speed':
+                vdo.playbackRate = 1;
+                break;
+            case 'voice':
+                break;
+            default:
+                mouseClick(e);
+                break;
+        }
+        showMsg(`stop: ${vm.mouseType} / ${e.clientX}`);
+        startTime = 0;
+        vm.mouseType = null;
+    }
+
+    function mouseClick(e) {
+        // 连续点击数
+        let wsplit = window.innerWidth / 3;
+        if (e.clientX < wsplit) {
+            vdo.currentTime -= 5;
+        } else if (e.clientX < wsplit * 2) {
+            vdo.paused ? vdo.play() : vdo.pause();
+        } else {
+            vdo.currentTime += 5;
+        }
+        showMsg(`mouseClick: ${e.detail} / ${e.clientX} / ${wsplit}`);
+    }
+
+    document.addEventListener('touchstart', e => mouseStart(e.touches[0]));
+    document.addEventListener('mousedown', e => mouseStart(e));
+    document.addEventListener('touchmove', e => mouseMove(e.touches[0]));
+    document.addEventListener('mousemove', e => mouseMove(e));
+    document.addEventListener('touchend', e => mouseEnd(e.changedTouches[0]));
+    document.addEventListener('mouseup', mouseEnd);
+    // 禁用点击视频播放
+    vdo.addEventListener('click', e => {
+         e.preventDefault();
+         console.log('click');
+    });
+    // 禁用手机长按打开右键菜单
+    vdo.addEventListener('contextmenu', e => e.preventDefault());
+
+    function showMsg(msg) {
+        document.getElementById('msg').innerText = msg;
+    }
+</script>
+</html>

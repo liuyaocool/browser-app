@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- 初始缩放 -->
+    <meta name="viewport" content="initial-scale=0.4">
+    <title>FILE SYSTEM</title>
+    <link rel="stylesheet" href="theme.css"/>
+</head>
+<body>
+<div id="app">
+    <table id="main">
+        <!-- 添加这个dom 解决首行跨列导致的宽度失效 -->
+        <colgroup><col><col><col><col><col></colgroup>
+        <thead class="fix-th">
+            <tr><td colspan="5" style="white-space: normal;">
+                <span v-for="(row, i) in pagePath" class="folder path" @click="gotoPagePath(i)">
+                    {{row}}
+                </span>
+                <!-- <button class="upload" @click="uploadFile()">上传</button> -->
+                <button class="upload" @click="uploadBigFile()">上传</button>
+                <button class="upload" @click="uploadBatch()">批量上传</button>
+                <span>{{msg}}</span>
+            </td></tr>
+            <tr class="th-bg">
+                <td>名称
+                    <span @click="toggleShowHidden" class="name-btn"
+                        :class="showHidden ? 'name-btn-sel' : ''"
+                    >显隐</span>
+                </td>
+                <td>预览</td>
+                <td>大小</td>
+                <td>修改时间</td>
+                <td>操作</td>
+            </tr>
+            <tr><td class="folder" @click="folderLeave()" colspan="5">..</td></tr>
+        </thead>
+        <tbody>
+            <tr v-for="(row, i) in files" v-show="row.name[0] != '.' || showHidden">
+                <td :title="row.name" :class="row.type=='folder' ? 'folder' : 'file'" 
+                    @click="clickName(row)">{{row.name}}</td>
+                <td v-html="row.preview"></td>
+                <td>{{row.size}}</td>
+                <!-- <td><div style="width: 60px;" class="nowarp">{{row.suffix}}</div></td> -->
+                <td>{{row.time}}</td>
+                <td v-if="row.type=='folder'">-</td>
+                <td v-else>
+                    <span class="funcBtn" @click="openText(row)">文本</span>
+                    <span class="funcBtn" @click="downloadFile(row.name)">下载</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="msgBox" v-show="msgList.length > 0">
+        <div class="close" @click="msgList=[]">✘</div>
+        <div class="msgBoxLine" v-for="(row, i) in msgList"><span v-html="row"></span></div>
+    </div>
+
+</div>
+
+</body>
+
+<script src="config.js"></script>
+<script>includeCss('main.css?v=1.7', 'main-phone.css?v=1.9')</script>
+<script src="vue3.global.js"></script>
+<script>
+
+const apiPath = Global.apiPath;
+const FS_TYPE = {
+    FOLDER: 'folder',
+    IMAGE: 'image',
+    VIDEO: 'video',
+    TEXT: 'text',
+    PDF: 'pdf',
+    ZIP: 'zip',
+    DOC: 'doc',
+    EXCEL: 'excel',
+    PPT: 'ppt',
+};
+const FS_OPEN = {};
+FS_OPEN[FS_TYPE.IMAGE] = 'img.html';
+FS_OPEN[FS_TYPE.TEXT] = 'text.html';
+FS_OPEN[FS_TYPE.VIDEO] = 'video.html';
+
+const vm = Vue.createApp({
+    data() {
+        return {
+            msg: '',
+            msgList: [],
+            showHidden: 'true' === localStorage.getItem('showHidden'),
+            pagePath: [], // every ends with '/'
+            partSize: 5*1024*1024,
+            files: [
+                /**
+                {
+                    "name": "",
+                    "size": "",
+                    "time": "",
+                    "suffix": "", // zip, tar.gz, tar.zst
+                    "type": "", // FS_TYPE
+                    "path": "",
+                }
+                */
+            ],
+        }
+    },
+    created() {
+        if (location.hash) {
+            this.pagePath = decodeURIComponent(location.hash).slice(1).match(/[^\/]+\/?|\//g);
+        }
+        this.getFiles();
+    },
+    methods: {
+        async getFiles() {
+            let pp = location.hash = this.getPagePath(), files = [], tmp;
+            let res = await (await fetch(apiPath + "/fs/getFolderChilds", {
+                method: 'POST',
+                body: pp && !pp.endsWith('/') ? (pp + '/') : pp
+            })).json();
+            for (let i = 0; i < res.length; i+=4) {
+                files.push(tmp = {});
+                tmp.name = res[i+1];
+                tmp.size = res[i+2];
+                tmp.time = res[i+3];
+                tmp.suffix = res[i] == 'd' ? '-' : getFileSuffix(tmp.name);
+                tmp.type = res[i] == 'd' ? FS_TYPE.FOLDER : fsMimeType(tmp.suffix);
+                tmp.path = `${this.getPagePath()}${tmp.name}`;
+                tmp.preview = this.getFilePreview(tmp.suffix, tmp.path);
+            }
+            // sort
+            files.sort((f1, f2) => {
+                if (f1.type != f2.type) {
+                    if (f1.type == FS_TYPE.FOLDER) return -1;
+                    if (f2.type == FS_TYPE.FOLDER) return 1;
+                }
+                let f1Name = f1.name.toLowerCase(),
+                    f2Name = f2.name.toLowerCase(),
+                    min = Math.min(f1Name.length, f2Name.length);
+                for (let i = 0; i < min; i++)
+                    if (f1Name[i] != f2Name[i])
+                        return f1Name.charCodeAt(i) - f2Name.charCodeAt(i);
+                return f1Name.length - f2Name.length;
+            });
+            this.files = files;
+            // 回到页头
+            document.body.scrollTop = document.documentElement.scrollTop = 0;
+        },
+        toTop() {
+            // document.getElementById('tbody-div').scrollTop = 0;
+        },
+        toggleShowHidden() {
+            this.showHidden = !this.showHidden;
+            console.log(this.showHidden);
+            localStorage.setItem('showHidden', this.showHidden);
+        },
+        folderEnter(folderName) {
+            // 第一层路径
+            this.pagePath.push(folderName.endsWith('/') ? folderName : (folderName + '/'));
+            this.getFiles();
+            this.toTop();
+        },
+        folderLeave() {
+            this.pagePath.pop();
+            this.getFiles();
+            this.toTop();
+        },
+        gotoPagePath(idx) {
+            idx = Math.max(0, idx);
+            while (this.pagePath.length > (idx+1)) {
+                this.pagePath.pop();
+            }
+            this.getFiles();
+            this.toTop();
+        },
+        getPagePath() {
+            return this.pagePath.join('').replace("//", "/");
+        },
+        clickName(row) {
+            if (row.type == FS_TYPE.FOLDER) {
+                this.folderEnter(row.name);
+                return;
+            }
+            let a;
+            if (!(a = row.type))
+                return alert("暂不支持当前格式.");
+            window.open(`${FS_OPEN[a]}#${row.path}`);
+        },
+        openText(row) {
+            window.open(`${FS_OPEN[FS_TYPE.TEXT]}#${row.path}`);
+        },
+        downloadFile(fileName) {
+            location.href = `${apiPath}/fs/download?action=download&path=`
+                + encodeURIComponent(this.getPagePath() + fileName);
+        },
+        async uploadBatch() {
+            let files = await fileChooser(null, true), formData = new FormData(),
+                file, start, end, idx, res;
+            formData.append("dir", this.getPagePath());
+            outfor:
+            for (let i = 0; i < files.length; i++) {
+                file = files[i];
+                formData.set("filename", file.name);
+                formData.set("id", uuid());
+                start = 0;
+                idx = 0;
+                do {
+                    end = Math.min(file.size, start + this.partSize);
+                    formData.set("isLastPart", end >= file.size);
+                    formData.set("file", file.slice(start, end));
+                    res = await fileUpload(apiPath + "/fs/uploadBigFile", formData, {
+                        progress: e => {
+                            this.msgList[i] = `${file.name} <mrun>${(start + e.loaded) / file.size * 100 | 0}%</mrun>`;
+                        }
+                    });
+                    if('success' != res) {
+                        this.msgList[i] = `${file.name} <mer>${res}</mer>`;
+                        continue outfor;
+                    }
+                    start += this.partSize;
+                    idx++;
+                } while (start < file.size);
+                this.msgList[i] = `${file.name} <mok>success</mok>`;
+            };
+        },
+        uploadFile() {
+            if (this.pagePath.length < 1) {
+                this.msg = '请先进入一个目录';
+                return;
+            }
+            let that = this;
+            fileChooser().then(file => {
+                let formData = new FormData();
+                formData.append("file", file);
+                formData.append("dir", that.getPagePath());
+                fileUpload(apiPath + "/fs/uploadFile", formData, {
+                    progress: e => {
+                        that.msg = (e.loaded / e.total * 100 | 0) + '%';
+                    }
+                }).then(res => {
+                    that.msg = res;
+                });
+            });
+        },
+        uploadBigFile() {
+            if (this.pagePath.length < 1) {
+                this.msg = '请先进入一个目录';
+                return;
+            }
+            let that = this;
+            fileChooser().then(file => {
+                let formData = new FormData(),
+                    size = file.size,
+                    partSize = 5*1024*1024,
+                    partCount = (size/partSize).toFixed(0)*1+(size%partSize > 0 ? 1 : 0),
+                    partIdx = 0
+                ;
+                formData.append("id", uuid());
+                formData.append("dir", that.getPagePath());
+                formData.append("filename", file.name);
+                that.uploadPart(file, formData, partSize, partCount, partIdx);
+            });
+        },
+        uploadPart(file, formData, partSize, partCount, partIdx) {
+            let startIdx = partIdx * partSize,
+                endIdx = (partIdx+1) * partSize,
+                isLast = endIdx >= file.size;
+            endIdx = Math.min(file.size, endIdx);
+            // console.log(startIdx, endIdx);
+            formData.set("file", file.slice(startIdx, endIdx));
+            formData.set("isLastPart", isLast);
+            let that = this;
+            fileUpload(apiPath + "/fs/uploadBigFile", formData, {
+                progress: e => {
+                    that.msg = `${file.name}: ${partIdx + 1}/${partCount}  ${(e.loaded / e.total * 100 | 0)}%`;
+                }
+            }).then(res => {
+                if (isLast) {
+                    that.msg = res
+                } else {
+                    that.uploadPart(file, formData, partSize, partCount, partIdx+1);
+                };
+            });
+        },
+        getFilePreview(suffix, filepath) {
+            switch(fsMimeType(suffix)) {
+                case FS_TYPE.IMAGE:
+                    return `<img class="preview" 
+                    src="${apiPath}/fs/res?path=${encodeURIComponent(filepath)}">`;
+                case FS_TYPE.VIDEO:
+                    return `<img class="preview"
+                    src="${apiPath}/fs/videoPic?path=${encodeURIComponent(filepath)}">`;
+//                    return `<video class="preview"
+//                    src="${apiPath}/fs/res?action=preview&path=${encodeURIComponent(filepath)}"></video>`;
+                default: return "-";
+            }
+        },
+    },
+}).mount("#app");
+
+function fsMimeType(suffix) {
+    switch (suffix || '') {
+        case 'webp':
+        case 'png':
+        case 'jpeg':
+        case 'jpg':
+        case 'svg':
+        case 'gif': return FS_TYPE.IMAGE;
+        case 'webm':
+        case 'mp4': return FS_TYPE.VIDEO;
+        case 'txt':
+        case 'md':
+        case 'properties':
+        case 'conf':
+        case 'xml':
+        case 'desktop':
+        case 'log': return FS_TYPE.TEXT;
+        default: return '';
+    }
+}
+
+function getFileSuffix(nameOrPath) {
+    // 从后往前数第几个
+    let backNoTypeMap = {2: ['tar']};
+    let split = nameOrPath.split('.');
+    if (split.length < 2) {
+        return '-';
+    }
+    for (const len in backNoTypeMap) {
+        for (let i = 0; i < backNoTypeMap[len].length; i++) {
+            if (split[split.length - len] == backNoTypeMap[len][i]) {
+                return split.slice(split.length-len).join('.');
+            }
+        }
+    }
+    return split[split.length-1];
+}
+</script>
+
+<!--<script src="https://resource.liuyao.link/js/effect/mouseGerm.js"></script>-->
+<!--<script src="https://resource.liuyao.link/js/effect/bgRgbDown.js"></script>-->
+
+</html>
