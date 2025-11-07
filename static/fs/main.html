@@ -55,7 +55,7 @@
 
     <div class="msgBox" v-show="msgList.length > 0">
         <div class="close" @click="msgList=[]">✘</div>
-        <div class="msgBoxLine" v-for="(row, i) in msgList"><span v-html="row"></span></div>
+        <ol><li class="msgBoxLine" v-for="(row, i) in msgList" v-html="row"></li></ol>
     </div>
 
 </div>
@@ -196,8 +196,12 @@ const vm = Vue.createApp({
         },
         async uploadBatch() {
             let files = await fileChooser(null, true), formData = new FormData(),
-                file, start, end, idx, res;
+                file, start, end, idx, res, msgList = [];
             formData.append("dir", this.getPagePath());
+            for (let i = 0; i < files.length; i++) {
+                msgList[i] = `${files[i].name} <mrun>waiting...</mrun>`;
+            }
+            this.msgList = msgList;
             outfor:
             for (let i = 0; i < files.length; i++) {
                 file = files[i];
