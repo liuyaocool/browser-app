@@ -1,7 +1,6 @@
-const Global = {
-    apiPath: "/browser-app",
+const apiPath = "/browser-app";
+const GLOBAL = {
 };
-const GLOBAL = Global;
 
 function isMobile() {
     return /Mobi/.test(navigator.userAgent);

@@ -22,6 +22,6 @@
 <script>
     const filePath = location.hash.substring(1);
     document.title = filePath.substr(filePath.lastIndexOf('/') + 1);
-    imgDoc.src = `${GLOBAL.apiPath}/fs/res?path=${encodeURIComponent(filePath)}`;
+    imgDoc.src = `${apiPath}/fs/res?path=${encodeURIComponent(filePath)}`;
 </script>
 </html>

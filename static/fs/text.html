@@ -47,6 +47,12 @@
     }
     const filePath = location.hash.substring(1);
     encodeSel.value = localStorage.getItem('encode_' + filePath) || 'UTF-8';
+
+    let textHandle = str => str;
+    if (filePath.endsWith('.html')) {
+        textHandle = str => str.replaceAll('<', '&lt;');
+    }
+
     const decoder = new TextDecoder(encodeSel.value);
     let readPos = 0
         ,ended = false
@@ -69,16 +75,15 @@
 
     async function nextText() {
         const resp = await fetch(
-            `${Global.apiPath}/fs/res?path=${encodeURIComponent(filePath)}`,
+            `${apiPath}/fs/res?path=${encodeURIComponent(filePath)}`,
             { headers: {"Range": `bytes=${readPos}-${readPos + pageSize - 1}`} });
         readPos += pageSize;
         const buf = await resp.arrayBuffer();
-        if (0 == buf.byteLength) {
-            ended = true;
-            return;
-        }
+        let range = resp.headers.get('Content-Range').split('-')[1].split('/');
+        ended = range[0]*1+1 == range[1];
+
         const bytes = new Uint8Array(buf);
-        const firstLFIdx = bytes.indexOf(codeLF); // -1
+        const firstLFIdx = bytes.indexOf(codeLF);
         if (firstLFIdx == -1) { // 没有\n, 等下一次
             prevLast = uint8ArrayConcat(prevLast, bytes);
             await nextText();
@@ -87,17 +92,11 @@
         const lastLFIdx = bytes.lastIndexOf(codeLF);
         // subarray 子数组 共享内存 并没有复制
         const firstLine = uint8ArrayConcat(prevLast, bytes.subarray(0, firstLFIdx));
-        let ele = `<li>${decoder.decode(firstLine)}</li>`;;
+        let ele = `<li>${textHandle(decoder.decode(firstLine))}</li>`;;
         let lineBytes = bytes.subarray(firstLFIdx+1, lastLFIdx);
-        // console.log('prev: ' + decoder.decode(new Uint8Array(prevLast)));
-        // console.log('this: ' + decoder.decode(new Uint8Array(bytes.subarray(0, firstLFIdx))));
-        // console.log(`${firstLFIdx} / ${lastLFIdx}`);
-        // console.log(ele);
-        // console.log(lineBytes.length);
-        // console.log('----------------')
         if (lineBytes.length > 0) {
             decoder.decode(lineBytes).split('\n')
-                .forEach(line => ele += `<li>${line}</li>`);
+                .forEach(line => ele += `<li>${textHandle(line)}</li>`);
         }
         textOl.innerHTML += ele;
         prevLast = bytes.subarray(lastLFIdx + 1);

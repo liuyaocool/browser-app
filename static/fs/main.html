@@ -38,13 +38,13 @@
         </thead>
         <tbody>
             <tr v-for="(row, i) in files" v-show="row.name[0] != '.' || showHidden">
-                <td :title="row.name" :class="row.type=='folder' ? 'folder' : 'file'" 
+                <td :title="row.name" :class="row.fsType=='folder' ? 'folder' : 'file'" 
                     @click="clickName(row)">{{row.name}}</td>
                 <td v-html="row.preview"></td>
                 <td>{{row.size}}</td>
                 <!-- <td><div style="width: 60px;" class="nowarp">{{row.suffix}}</div></td> -->
                 <td>{{row.time}}</td>
-                <td v-if="row.type=='folder'">-</td>
+                <td v-if="row.fsType=='folder'">-</td>
                 <td v-else>
                     <span class="funcBtn" @click="openText(row)">文本</span>
                     <span class="funcBtn" @click="downloadFile(row.name)">下载</span>
@@ -67,7 +67,6 @@
 <script src="vue3.global.js"></script>
 <script>
 
-const apiPath = Global.apiPath;
 const FS_TYPE = {
     FOLDER: 'folder',
     IMAGE: 'image',
@@ -99,7 +98,7 @@ const vm = Vue.createApp({
                     "size": "",
                     "time": "",
                     "suffix": "", // zip, tar.gz, tar.zst
-                    "type": "", // FS_TYPE
+                    "fsType": "", // FS_TYPE
                     "path": "",
                 }
                 */
@@ -125,15 +124,15 @@ const vm = Vue.createApp({
                 tmp.size = res[i+2];
                 tmp.time = res[i+3];
                 tmp.suffix = res[i] == 'd' ? '-' : getFileSuffix(tmp.name);
-                tmp.type = res[i] == 'd' ? FS_TYPE.FOLDER : fsMimeType(tmp.suffix);
+                tmp.fsType = res[i] == 'd' ? FS_TYPE.FOLDER : fsMimeType(tmp.suffix);
                 tmp.path = `${this.getPagePath()}${tmp.name}`;
-                tmp.preview = this.getFilePreview(tmp.suffix, tmp.path);
+                tmp.preview = this.getFilePreview(tmp.fsType, tmp.path);
             }
             // sort
             files.sort((f1, f2) => {
-                if (f1.type != f2.type) {
-                    if (f1.type == FS_TYPE.FOLDER) return -1;
-                    if (f2.type == FS_TYPE.FOLDER) return 1;
+                if (f1.fsType != f2.fsType) {
+                    if (f1.fsType == FS_TYPE.FOLDER) return -1;
+                    if (f2.fsType == FS_TYPE.FOLDER) return 1;
                 }
                 let f1Name = f1.name.toLowerCase(),
                     f2Name = f2.name.toLowerCase(),
@@ -147,9 +146,6 @@ const vm = Vue.createApp({
             // 回到页头
             document.body.scrollTop = document.documentElement.scrollTop = 0;
         },
-        toTop() {
-            // document.getElementById('tbody-div').scrollTop = 0;
-        },
         toggleShowHidden() {
             this.showHidden = !this.showHidden;
             console.log(this.showHidden);
@@ -159,12 +155,10 @@ const vm = Vue.createApp({
             // 第一层路径
             this.pagePath.push(folderName.endsWith('/') ? folderName : (folderName + '/'));
             this.getFiles();
-            this.toTop();
         },
         folderLeave() {
             this.pagePath.pop();
             this.getFiles();
-            this.toTop();
         },
         gotoPagePath(idx) {
             idx = Math.max(0, idx);
@@ -172,20 +166,18 @@ const vm = Vue.createApp({
                 this.pagePath.pop();
             }
             this.getFiles();
-            this.toTop();
         },
         getPagePath() {
             return this.pagePath.join('').replace("//", "/");
         },
         clickName(row) {
-            if (row.type == FS_TYPE.FOLDER) {
+            if (row.fsType == FS_TYPE.FOLDER) {
                 this.folderEnter(row.name);
                 return;
             }
-            let a;
-            if (!(a = row.type))
+            if (!row.fsType)
                 return alert("暂不支持当前格式.");
-            window.open(`${FS_OPEN[a]}#${row.path}`);
+            window.open(`${FS_OPEN[row.fsType]}#${row.path}`);
         },
         openText(row) {
             window.open(`${FS_OPEN[FS_TYPE.TEXT]}#${row.path}`);
@@ -287,8 +279,8 @@ const vm = Vue.createApp({
                 };
             });
         },
-        getFilePreview(suffix, filepath) {
-            switch(fsMimeType(suffix)) {
+        getFilePreview(fsType, filepath) {
+            switch(fsType) {
                 case FS_TYPE.IMAGE:
                     return `<img class="preview" 
                     src="${apiPath}/fs/res?path=${encodeURIComponent(filepath)}">`;
@@ -297,7 +289,7 @@ const vm = Vue.createApp({
                     src="${apiPath}/fs/videoPic?path=${encodeURIComponent(filepath)}">`;
 //                    return `<video class="preview"
 //                    src="${apiPath}/fs/res?action=preview&path=${encodeURIComponent(filepath)}"></video>`;
-                default: return "-";
+                default: return fsType;
             }
         },
     },
