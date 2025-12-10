@@ -107,17 +107,24 @@ const vm = Vue.createApp({
         }
     },
     created() {
+        let p;
         if (location.hash) {
-            this.pagePath = decodeURIComponent(location.hash).slice(1).match(/[^\/]+\/?|\//g);
+            p = location.hash.slice(1);
+        } else if(p = localStorage.getItem('path')) {
+        }
+        if (p) {
+            this.pagePath = decodeURIComponent(p).match(/[^\/]+\/?|\//g);
         }
         this.getFiles();
     },
     methods: {
         async getFiles() {
             let pp = location.hash = this.getPagePath(), files = [], tmp;
+            pp = pp && !pp.endsWith('/') ? (pp + '/') : pp;
+            localStorage.setItem('path', pp);
             let res = await (await fetch(apiPath + "/fs/getFolderChilds", {
                 method: 'POST',
-                body: pp && !pp.endsWith('/') ? (pp + '/') : pp
+                body: pp
             })).json();
             for (let i = 0; i < res.length; i+=4) {
                 files.push(tmp = {});
