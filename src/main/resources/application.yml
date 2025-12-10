@@ -1,7 +1,7 @@
 server:
   port: 8089
   servlet:
-    context-path: /browser-app
+    context-path: /bs
 #  max-http-header-size: 100MB # 导致请求url的时候内存 超高
 spring:
   mvc:
@@ -22,6 +22,3 @@ logging:
     root: info
   file:
     path: /tmp/local-utils-bs/logs
-pro:
-#  rang api max size(kb)
-  max-range: 1000

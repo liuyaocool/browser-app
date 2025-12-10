@@ -1,0 +1,12 @@
+#!/bin/bash
+if [[ $# < 1 ]]; then
+    echo "Usage: $0 <folder path include main.jar+application.yml>"
+    exit 1
+fi
+
+/opt/java/graalvm-ce-java8-21.2.0/bin/java \
+    -Xms128M -Xmx1024M \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:+PrintGCDetails \
+    -jar ${1}/main.jar \
+    --spring.config.location=file:${1}/application.yml
