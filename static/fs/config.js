@@ -1,4 +1,4 @@
-const apiPath = "/bs";
+const apiPath = "/bs-api";
 const GLOBAL = {
 };
 
